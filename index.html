@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Study Buddy — Catatan Jadi Flashcard &amp; Kuis</title>
+  <meta name="description" content="Ubah catatan kuliah menjadi flashcard interaktif dan kuis pilihan ganda secara instan." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="min-h-screen bg-[#f6f7fc] font-sans text-slate-800 antialiased">
+  <!-- Dekorasi latar -->
+  <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+    <div class="absolute -left-28 -top-32 h-80 w-80 rounded-full bg-indigo-300/30 blur-3xl"></div>
+    <div class="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-violet-300/25 blur-3xl"></div>
+    <div class="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-sky-200/20 blur-3xl"></div>
+  </div>
+
+  <header class="mx-auto max-w-6xl px-5 pt-8 sm:pt-10">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div
+          class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30"
+        >
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3Z" stroke-linejoin="round" />
+            <path d="M18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1L15.5 18l2.1-.9.9-2.1Z" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">AI Study Buddy</h1>
+          <p class="text-sm text-slate-500" data-i18n="app.subtitle">Catatan kuliah jadi flashcard &amp; kuis dalam sekejap.</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="lang-switch" role="group" aria-label="Bahasa / Language">
+          <svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" stroke-linecap="round" />
+          </svg>
+          <button type="button" class="lang-btn is-active" data-lang="id" aria-pressed="true" title="Bahasa Indonesia">
+            ID
+          </button>
+          <button type="button" class="lang-btn" data-lang="en" aria-pressed="false" title="English">
+            EN
+          </button>
+        </div>
+
+        <div id="stats" class="flex items-center gap-2">
+          <span id="stat-cards" class="stat-pill">0 kartu</span>
+          <span id="stat-quiz" class="stat-pill">0 soal</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[minmax(0,390px)_minmax(0,1fr)] lg:items-start">
+    <!-- ================= PANEL INPUT ================= -->
+    <section class="panel p-5 sm:p-6">
+      <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 class="text-base font-bold text-slate-900" data-i18n="input.title">1. Tempel catatanmu</h2>
+        <div class="ml-auto flex items-center gap-2">
+          <button id="btn-sample" type="button" class="text-xs font-bold text-indigo-600 transition hover:text-indigo-800 hover:underline" data-i18n="input.sample">
+            Pakai contoh
+          </button>
+          <span class="h-3.5 w-px bg-slate-200" aria-hidden="true"></span>
+          <button id="btn-clear" type="button" class="clear-btn">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M10 11v6M14 11v6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span id="clear-label" data-i18n="storage.clear">Hapus catatan</span>
+          </button>
+        </div>
+      </div>
+      <p class="mt-1 text-sm leading-relaxed text-slate-500" data-i18n="input.desc">
+        Satu poin per baris, atau tulis bebas. Kami akan memecah dan menyusunnya otomatis.
+      </p>
+
+      <label for="notes" class="sr-only" data-i18n="input.label">Catatan kuliah</label>
+      <textarea
+        id="notes"
+        rows="12"
+        spellcheck="false"
+        class="mt-3 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-relaxed text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+        data-i18n-placeholder="input.placeholder"
+        placeholder="Contoh:&#10;Overfitting terjadi ketika model terlalu hafal data latih.&#10;Neural network: jaringan saraf tiruan berlapis.&#10;Gradient descent adalah algoritma optimasi bobot."
+      ></textarea>
+
+      <div class="mt-2 flex items-center justify-between gap-3 text-xs text-slate-400">
+        <span id="char-count">0 karakter</span>
+        <span class="flex items-center gap-3">
+          <span id="save-status" class="save-status" aria-live="polite">
+            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+              <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span data-i18n="storage.saved">Tersimpan</span>
+          </span>
+          <span id="line-count">0 poin</span>
+        </span>
+      </div>
+
+      <button id="btn-generate" type="button" class="generate-btn mt-4">
+        <svg id="generate-icon" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <path d="M12 4l1.7 4.1L18 9.8l-4.3 1.7L12 15.6l-1.7-4.1L6 9.8l4.3-1.7L12 4Z" stroke-linejoin="round" />
+          <path d="M18.2 15.2l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8.8-1.9Z" stroke-linejoin="round" />
+        </svg>
+        <span id="generate-spinner" class="spinner hidden" aria-hidden="true"></span>
+        <span id="generate-label">Buat Flashcard &amp; Kuis</span>
+      </button>
+
+      <div class="mt-3 grid grid-cols-2 gap-2">
+        <button id="btn-export" type="button" class="storage-btn">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span data-i18n="storage.export">Simpan File</span>
+        </button>
+        <button id="btn-import" type="button" class="storage-btn">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <path d="M12 16V4m0 0 4 4m-4-4-4 4M5 18v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span data-i18n="storage.import">Buka File</span>
+        </button>
+      </div>
+      <input id="file-input" type="file" class="hidden" accept=".json,.txt,text/plain,application/json" />
+
+      <p id="form-hint" class="form-hint hidden" role="alert"></p>
+
+      <div class="mt-5 rounded-2xl bg-slate-50/80 p-4 text-xs leading-relaxed text-slate-500">
+        <p class="font-bold text-slate-600" data-i18n="tips.title">Tips agar hasilnya bagus</p>
+        <ul class="mt-2 list-disc space-y-1 pl-4">
+          <li data-i18n-html="tips.one">Gunakan format <code class="code-chip">Istilah: penjelasan</code> untuk kartu definisi.</li>
+          <li data-i18n-html="tips.two">Baris tanpa titik dua akan diubah menjadi kartu isian rumpang.</li>
+          <li data-i18n-html="tips.three">Minimal 2 poin agar kuis bisa dibuat.</li>
+          <li data-i18n="tips.four">Catatan tersimpan otomatis di browser ini.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ================= AREA BELAJAR ================= -->
+    <section class="min-h-[520px]">
+      <!-- Keadaan kosong -->
+      <div id="study-empty" class="empty-state">
+        <div class="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 text-indigo-600">
+          <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <rect x="3" y="5" width="13" height="15" rx="2.5" />
+            <path d="M8 5V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-1" stroke-linecap="round" />
+            <path d="M6.5 9.5h6M6.5 13h6M6.5 16.5h3.5" stroke-linecap="round" />
+          </svg>
+        </div>
+        <h2 class="mt-5 text-lg font-extrabold text-slate-900" data-i18n="empty.title">Materi belajarmu muncul di sini</h2>
+        <p class="mt-2 max-w-sm text-sm leading-relaxed text-slate-500" data-i18n-html="empty.desc">
+          Tempel catatan kuliahmu, lalu tekan
+          <span class="font-semibold text-slate-700">Buat Flashcard &amp; Kuis</span>.
+        </p>
+
+        <div class="mt-6 grid w-full max-w-sm gap-2 text-left text-sm">
+          <div class="flex items-start gap-3 rounded-xl bg-white/80 px-4 py-3 ring-1 ring-slate-200/70">
+            <span class="mt-0.5 text-indigo-500">◆</span>
+            <span data-i18n-html="empty.f1"><strong class="font-semibold text-slate-700">Flashcard 3D.</strong> Klik kartu untuk membalik.</span>
+          </div>
+          <div class="flex items-start gap-3 rounded-xl bg-white/80 px-4 py-3 ring-1 ring-slate-200/70">
+            <span class="mt-0.5 text-indigo-500">◆</span>
+            <span data-i18n-html="empty.f2"><strong class="font-semibold text-slate-700">Kuis pilihan ganda.</strong> Lengkap dengan pembahasan.</span>
+          </div>
+          <div class="flex items-start gap-3 rounded-xl bg-white/80 px-4 py-3 ring-1 ring-slate-200/70">
+            <span class="mt-0.5 text-indigo-500">◆</span>
+            <span data-i18n-html="empty.f3"><strong class="font-semibold text-slate-700">Skor otomatis.</strong> Pantau hasil belajarmu.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel belajar -->
+      <div id="study-panels" class="hidden">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div class="tabs" role="tablist" aria-label="Mode belajar" data-i18n-aria="tabs.aria">
+            <button
+              type="button"
+              class="tab-btn is-active"
+              data-tab="cards"
+              role="tab"
+              id="tab-btn-cards"
+              aria-selected="true"
+              aria-controls="tab-cards"
+              data-i18n="tabs.cards"
+            >
+              Flashcard
+            </button>
+            <button
+              type="button"
+              class="tab-btn"
+              data-tab="quiz"
+              role="tab"
+              id="tab-btn-quiz"
+              aria-selected="false"
+              aria-controls="tab-quiz"
+              data-i18n="tabs.quiz"
+            >
+              Kuis
+            </button>
+          </div>
+
+          <button
+            id="btn-new"
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+          >
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+            </svg>
+            <span data-i18n="action.new">Catatan baru</span>
+          </button>
+        </div>
+
+        <!-- ---------- FLASHCARD ---------- -->
+        <div id="tab-cards" role="tabpanel" aria-labelledby="tab-btn-cards">
+          <div class="panel p-4 sm:p-6">
+            <div class="mb-3 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
+              <span id="card-counter">Kartu 1 / 1</span>
+              <span class="hidden items-center gap-1.5 text-slate-400 sm:flex">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M8 2v4M16 2v4M3 8h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke-linecap="round" />
+                </svg>
+                <span data-i18n="card.clickToFlip">Klik kartu untuk membalik</span>
+              </span>
+            </div>
+
+            <div class="progress-track"><div id="card-progress" class="progress-bar"></div></div>
+
+            <div class="mt-5">
+              <div
+                id="flashcard"
+                class="flip-card"
+                role="button"
+                tabindex="0"
+                aria-pressed="false"
+                aria-label="Flashcard. Tekan Enter atau klik untuk membalik."
+                data-i18n-aria="card.aria"
+              >
+                <div class="flip-card-inner">
+                  <!-- Sisi depan -->
+                  <div class="flip-face flip-front">
+                    <div class="flex items-center justify-between gap-3">
+                      <span id="card-badge" class="card-badge">Pertanyaan</span>
+                      <span class="text-xs font-bold text-slate-300">#<span id="card-number">1</span></span>
+                    </div>
+                    <div id="card-front" class="card-content"></div>
+                    <p class="card-hint" data-i18n="card.reveal">Klik untuk melihat jawaban</p>
+                  </div>
+
+                  <!-- Sisi belakang -->
+                  <div class="flip-face flip-back">
+                    <div class="flex items-center justify-between gap-3">
+                      <span class="card-badge card-badge-light" data-i18n="card.answerBadge">Jawaban</span>
+                      <span class="text-xs font-bold text-white/40">#<span id="card-number-back">1</span></span>
+                    </div>
+                    <div id="card-back" class="card-content"></div>
+                    <p class="card-hint card-hint-light" data-i18n="card.back">Klik untuk kembali</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-5 flex items-center justify-between gap-2">
+              <button id="card-prev" type="button" class="nav-btn" aria-label="Kartu sebelumnya" data-i18n-aria="card.prevAria">
+                <span aria-hidden="true">←</span>
+                <span class="hidden xl:inline" data-i18n="card.prev">Sebelumnya</span>
+              </button>
+              <button id="card-flip" type="button" class="flip-btn">Balik kartu</button>
+              <button id="card-next" type="button" class="nav-btn" aria-label="Kartu berikutnya" data-i18n-aria="card.nextAria">
+                <span class="hidden xl:inline" data-i18n="card.next">Berikutnya</span>
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+
+            <p class="mt-3 hidden text-center text-[11px] font-medium text-slate-400 sm:block" data-i18n-html="card.keys">
+              Gunakan <kbd class="kbd">←</kbd> <kbd class="kbd">→</kbd> untuk berpindah, <kbd class="kbd">Space</kbd> untuk membalik.
+            </p>
+          </div>
+        </div>
+
+        <!-- ---------- KUIS ---------- -->
+        <div id="tab-quiz" role="tabpanel" aria-labelledby="tab-btn-quiz" class="hidden">
+          <div id="quiz-empty" class="panel hidden p-8 text-center">
+            <p class="text-3xl">🧠</p>
+            <h3 class="mt-3 text-base font-extrabold text-slate-900" data-i18n="quiz.emptyTitle">Kuis belum bisa dibuat</h3>
+            <p class="mt-1 text-sm leading-relaxed text-slate-500" data-i18n-html="quiz.emptyDesc">
+              Butuh minimal dua poin dengan istilah berbeda. Coba tulis catatan dengan format
+              <code class="code-chip">Istilah: penjelasan</code>.
+            </p>
+          </div>
+
+          <div id="quiz-body" class="panel p-5 sm:p-7">
+            <div class="flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
+              <span id="quiz-counter">Soal 1 / 1</span>
+              <span id="quiz-score" class="score-chip">0 benar</span>
+            </div>
+
+            <div class="progress-track mt-3"><div id="quiz-progress" class="progress-bar"></div></div>
+
+            <div class="mt-6">
+              <p id="quiz-prompt" class="text-lg font-extrabold leading-snug text-slate-900"></p>
+              <p id="quiz-context" class="quiz-context hidden"></p>
+            </div>
+
+            <div id="quiz-options" class="mt-5 space-y-2.5" role="group" aria-label="Pilihan jawaban" data-i18n-aria="quiz.optionsAria"></div>
+
+            <div id="quiz-feedback" class="quiz-feedback mt-4 hidden" aria-live="polite"></div>
+
+            <div class="mt-5 flex justify-end">
+              <button id="quiz-next" type="button" class="next-btn hidden">Soal berikutnya →</button>
+            </div>
+          </div>
+
+          <div id="quiz-result" class="panel hidden p-6 text-center sm:p-10">
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-500" data-i18n="quiz.resultLabel">Hasil kuis</p>
+            <div id="result-ring" class="score-ring mx-auto mt-5">
+              <span id="result-percent">0%</span>
+            </div>
+            <h3 id="result-title" class="mt-5 text-xl font-extrabold text-slate-900"></h3>
+            <p id="result-text" class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500"></p>
+            <div id="result-review" class="mx-auto mt-5 max-w-md text-left"></div>
+
+            <div class="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <button id="btn-retry" type="button" class="next-btn" data-i18n="result.retry">Ulangi kuis</button>
+              <button id="btn-new-2" type="button" class="nav-btn px-4 py-2.5" data-i18n="action.new">Catatan baru</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mx-auto max-w-6xl px-5 pb-8 text-center text-xs text-slate-400" data-i18n="app.footer">
+    Dibuat untuk belajar lebih cepat. Semua materi diproses langsung di browser.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
