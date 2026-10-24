@@ -335,6 +335,10 @@
             <div class="flex flex-wrap items-center justify-between gap-3 gap-y-2 text-xs font-semibold text-slate-500">
               <span id="quiz-counter">Soal 1 / 1</span>
               <div class="flex items-center gap-2">
+                <span id="quiz-streak" class="streak-chip" role="status" aria-live="polite" aria-atomic="true" hidden>
+                  <span class="streak-flame" aria-hidden="true">🔥</span>
+                  <span id="quiz-streak-value">0</span>
+                </span>
                 <button id="quiz-shuffle" type="button" class="shuffle-btn">
                   <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
                     <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke-linecap="round" stroke-linejoin="round" />
@@ -368,6 +372,10 @@
             </div>
             <h3 id="result-title" class="mt-5 text-xl font-extrabold text-slate-900"></h3>
             <p id="result-text" class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500"></p>
+            <p id="quiz-celebration" class="celebration-badge mt-3" hidden>
+              <span aria-hidden="true">🎉</span>
+              <span data-i18n="celebrate.badge">Skor luar biasa!</span>
+            </p>
             <div id="result-review" class="mx-auto mt-5 max-w-md text-left"></div>
 
             <div class="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -397,6 +405,10 @@
             <div class="flex flex-wrap items-center justify-between gap-3 gap-y-2 text-xs font-semibold text-slate-500">
               <span id="tf-counter">Soal 1 / 1</span>
               <div class="flex items-center gap-2">
+                <span id="tf-streak" class="streak-chip" role="status" aria-live="polite" aria-atomic="true" hidden>
+                  <span class="streak-flame" aria-hidden="true">🔥</span>
+                  <span id="tf-streak-value">0</span>
+                </span>
                 <button id="tf-shuffle" type="button" class="shuffle-btn">
                   <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
                     <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke-linecap="round" stroke-linejoin="round" />
@@ -446,6 +458,10 @@
             </div>
             <h3 id="tf-result-title" class="mt-5 text-xl font-extrabold text-slate-900"></h3>
             <p id="tf-result-text" class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500"></p>
+            <p id="tf-celebration" class="celebration-badge mt-3" hidden>
+              <span aria-hidden="true">🎉</span>
+              <span data-i18n="celebrate.badge">Skor luar biasa!</span>
+            </p>
 
             <div class="mt-7 flex flex-wrap items-center justify-center gap-3">
               <button id="btn-tf-retry" type="button" class="next-btn" data-i18n="tf.retry">Ulangi kuis T/F</button>
@@ -466,6 +482,9 @@
   <footer class="mx-auto max-w-6xl px-5 pb-8 text-center text-xs text-slate-400" data-i18n="app.footer">
     Dibuat untuk belajar lebih cepat. Semua materi diproses langsung di browser.
   </footer>
+
+  <canvas id="confetti-canvas" class="confetti-canvas" aria-hidden="true" hidden></canvas>
+  <p id="celebration-status" class="sr-only" role="status" aria-live="polite"></p>
 
   <script src="app.js"></script>
 </body>

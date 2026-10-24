@@ -158,6 +158,11 @@ const TRANSLATIONS = {
     'tf.resultLabel': 'Hasil True / False',
     'tf.retry': 'Ulangi kuis T/F',
 
+    'streak.aria': 'Jawaban benar beruntun: {n}',
+    'streak.title': 'Jawaban benar beruntun',
+    'celebrate.badge': 'Skor luar biasa!',
+    'celebrate.announce': 'Skor {percent}%! Konfeti selebrasi!',
+
     'result.retry': 'Ulangi kuis',
     'result.summary': '{score} dari {total} soal benar. {text}',
     'result.great': 'Luar biasa!',
@@ -273,6 +278,11 @@ const TRANSLATIONS = {
     'tf.resultLabel': 'True / False result',
     'tf.retry': 'Retry T/F quiz',
 
+    'streak.aria': 'Correct answer streak: {n}',
+    'streak.title': 'Consecutive correct answers',
+    'celebrate.badge': 'Outstanding score!',
+    'celebrate.announce': 'Score {percent}%! Confetti celebration!',
+
     'result.retry': 'Retry quiz',
     'result.summary': '{score} of {total} correct. {text}',
     'result.great': 'Outstanding!',
@@ -321,10 +331,12 @@ const state = {
   flipped: false,
   quizIndex: 0,
   score: 0,
+  streak: 0,
   answered: false,
   tf: [],
   tfIndex: 0,
   tfScore: 0,
+  tfStreak: 0,
   tfAnswered: false,
   loading: false,
 };
@@ -381,6 +393,8 @@ const els = {
   quizResult: $('#quiz-result'),
   quizCounter: $('#quiz-counter'),
   quizScore: $('#quiz-score'),
+  quizStreak: $('#quiz-streak'),
+  quizStreakValue: $('#quiz-streak-value'),
   quizProgress: $('#quiz-progress'),
   quizPrompt: $('#quiz-prompt'),
   quizContext: $('#quiz-context'),
@@ -394,6 +408,7 @@ const els = {
   resultTitle: $('#result-title'),
   resultText: $('#result-text'),
   resultReview: $('#result-review'),
+  quizCelebration: $('#quiz-celebration'),
   btnRetry: $('#btn-retry'),
   btnShuffleResult: $('#btn-shuffle-result'),
   btnNew: $('#btn-new'),
@@ -404,6 +419,8 @@ const els = {
   tfResult: $('#tf-result'),
   tfCounter: $('#tf-counter'),
   tfScore: $('#tf-score'),
+  tfStreak: $('#tf-streak'),
+  tfStreakValue: $('#tf-streak-value'),
   tfProgress: $('#tf-progress'),
   tfTerm: $('#tf-term'),
   tfDefinition: $('#tf-definition'),
@@ -416,9 +433,13 @@ const els = {
   tfResultPercent: $('#tf-result-percent'),
   tfResultTitle: $('#tf-result-title'),
   tfResultText: $('#tf-result-text'),
+  tfCelebration: $('#tf-celebration'),
   btnTfRetry: $('#btn-tf-retry'),
   btnTfShuffleResult: $('#btn-tf-shuffle-result'),
   btnTfNew: $('#btn-tf-new'),
+
+  confettiCanvas: $('#confetti-canvas'),
+  celebrationStatus: $('#celebration-status'),
 };
 
 /* ============================================================
@@ -833,6 +854,7 @@ function renderQuizQuestion() {
 
   els.quizCounter.textContent = t('quiz.counter', { i: state.quizIndex + 1, n: state.quiz.length });
   els.quizScore.textContent = t('quiz.score', { n: state.score });
+  renderQuizStreak();
   els.quizProgress.style.width = `${((state.quizIndex + (answered ? 1 : 0)) / state.quiz.length) * 100}%`;
 
   els.quizPrompt.textContent = questionPrompt(question);
@@ -872,9 +894,16 @@ function selectAnswer(index) {
   state.answered = true;
   question.selected = index;
   question.correct = index === question.answerIndex;
-  if (question.correct) state.score += 1;
+
+  if (question.correct) {
+    state.score += 1;
+    state.streak += 1;
+  } else {
+    state.streak = 0;
+  }
 
   els.quizScore.textContent = t('quiz.score', { n: state.score });
+  renderQuizStreak({ bump: question.correct });
   els.quizProgress.style.width = `${((state.quizIndex + 1) / state.quiz.length) * 100}%`;
 
   paintAnswer(question);
@@ -919,9 +948,12 @@ function scoreCopy(percent) {
   return { title: 'result.low', text: 'result.lowText' };
 }
 
-function showQuizResult() {
+function showQuizResult({ celebrate = true } = {}) {
   const total = state.quiz.length;
   const percent = total ? Math.round((state.score / total) * 100) : 0;
+
+  state.streak = 0;
+  renderQuizStreak();
 
   els.quizBody.classList.add('hidden');
   els.quizResult.classList.remove('hidden');
@@ -957,17 +989,23 @@ function showQuizResult() {
           .join('')}
       </ul>`
     : '';
+
+  updateCelebration(els.quizCelebration, percent, celebrate);
 }
 
 function resetQuiz() {
   state.quizIndex = 0;
   state.score = 0;
+  state.streak = 0;
   state.answered = false;
   state.quiz.forEach((question) => {
     question.correct = undefined;
     question.selected = undefined;
   });
 
+  renderQuizStreak();
+  stopConfetti();
+  els.quizCelebration.hidden = true;
   els.quizResult.classList.add('hidden');
   els.quizBody.classList.remove('hidden');
 }
@@ -1002,6 +1040,7 @@ function renderTfQuestion() {
 
   els.tfCounter.textContent = t('tf.counter', { i: state.tfIndex + 1, n: state.tf.length });
   els.tfScore.textContent = t('quiz.score', { n: state.tfScore });
+  renderTfStreak();
   els.tfProgress.style.width = `${((state.tfIndex + (answered ? 1 : 0)) / state.tf.length) * 100}%`;
 
   els.tfTerm.textContent = question.term;
@@ -1029,9 +1068,16 @@ function selectTfAnswer(answer) {
   state.tfAnswered = true;
   question.selected = answer;
   question.correct = answer === question.isTrue;
-  if (question.correct) state.tfScore += 1;
+
+  if (question.correct) {
+    state.tfScore += 1;
+    state.tfStreak += 1;
+  } else {
+    state.tfStreak = 0;
+  }
 
   els.tfScore.textContent = t('quiz.score', { n: state.tfScore });
+  renderTfStreak({ bump: question.correct });
   els.tfProgress.style.width = `${((state.tfIndex + 1) / state.tf.length) * 100}%`;
 
   paintTfAnswer(question);
@@ -1081,9 +1127,12 @@ function nextTfQuestion() {
   renderTfQuestion();
 }
 
-function showTfResult() {
+function showTfResult({ celebrate = true } = {}) {
   const total = state.tf.length;
   const percent = total ? Math.round((state.tfScore / total) * 100) : 0;
+
+  state.tfStreak = 0;
+  renderTfStreak();
 
   els.tfBody.classList.add('hidden');
   els.tfResult.classList.remove('hidden');
@@ -1102,17 +1151,23 @@ function showTfResult() {
     total,
     text: t(copy.text),
   });
+
+  updateCelebration(els.tfCelebration, percent, celebrate);
 }
 
 function resetTf() {
   state.tfIndex = 0;
   state.tfScore = 0;
+  state.tfStreak = 0;
   state.tfAnswered = false;
   state.tf.forEach((question) => {
     question.selected = undefined;
     question.correct = undefined;
   });
 
+  renderTfStreak();
+  stopConfetti();
+  els.tfCelebration.hidden = true;
   els.tfResult.classList.add('hidden');
   els.tfBody.classList.remove('hidden');
 }
@@ -1128,6 +1183,195 @@ function shuffleTf() {
 }
 
 /* ============================================================
+   Streak & konfeti
+   ============================================================ */
+
+let confettiFrame = null;
+let celebrationTimer = null;
+
+/**
+ * Perbarui chip streak. Indikator hanya tampil saat streak >= 2.
+ * `bump` dipakai untuk animasi kecil setiap kali streak bertambah.
+ */
+function renderStreak(element, valueElement, value, { bump = false } = {}) {
+  if (!element || !valueElement) return;
+
+  const active = value >= 2;
+  element.hidden = !active;
+  element.classList.toggle('is-active', active);
+  element.title = t('streak.title');
+
+  if (!active) {
+    element.removeAttribute('aria-label');
+    element.classList.remove('is-bump');
+    return;
+  }
+
+  valueElement.textContent = String(value);
+  element.setAttribute('aria-label', t('streak.aria', { n: value }));
+
+  if (bump) {
+    element.classList.remove('is-bump');
+    void element.offsetWidth;
+    element.classList.add('is-bump');
+  }
+}
+
+function renderQuizStreak(options = {}) {
+  renderStreak(els.quizStreak, els.quizStreakValue, state.streak, options);
+}
+
+function renderTfStreak(options = {}) {
+  renderStreak(els.tfStreak, els.tfStreakValue, state.tfStreak, options);
+}
+
+/**
+ * Tampilkan badge selebrasi dan jalankan konfeti untuk skor >= 80%.
+ * `celebrate=false` dipakai saat re-render bahasa agar konfeti tidak diulang.
+ */
+function updateCelebration(badge, percent, celebrate) {
+  const shouldCelebrate = percent >= 80;
+  badge.hidden = !shouldCelebrate;
+
+  if (!shouldCelebrate) {
+    if (celebrate) stopConfetti();
+    return;
+  }
+
+  if (celebrate) launchConfetti(percent);
+}
+
+function announceCelebration(percent) {
+  if (!els.celebrationStatus) return;
+
+  window.clearTimeout(celebrationTimer);
+  els.celebrationStatus.textContent = '';
+  celebrationTimer = window.setTimeout(() => {
+    els.celebrationStatus.textContent = t('celebrate.announce', { percent });
+    celebrationTimer = null;
+  }, 80);
+}
+
+/** Hentikan animasi konfeti dan bersihkan canvas. Aman dipanggil berkali-kali. */
+function stopConfetti() {
+  if (confettiFrame !== null) {
+    window.cancelAnimationFrame(confettiFrame);
+    confettiFrame = null;
+  }
+
+  window.clearTimeout(celebrationTimer);
+  celebrationTimer = null;
+  if (els.celebrationStatus) els.celebrationStatus.textContent = '';
+
+  const canvas = els.confettiCanvas;
+  if (!canvas) return;
+
+  const context = canvas.getContext('2d');
+  if (context) {
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.restore();
+  }
+
+  canvas.hidden = true;
+}
+
+/** Efek konfeti ringan: satu canvas, satu loop RAF, lalu hilang otomatis. */
+function launchConfetti(percent) {
+  const canvas = els.confettiCanvas;
+  if (!canvas) return;
+
+  const reducedMotion = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (reducedMotion) {
+    stopConfetti();
+    announceCelebration(percent);
+    return;
+  }
+
+  stopConfetti();
+
+  const context = canvas.getContext('2d');
+  if (!context) return;
+
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.max(1, Math.round(width * dpr));
+  canvas.height = Math.max(1, Math.round(height * dpr));
+  canvas.hidden = false;
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const palette = ['#4f46e5', '#7c3aed', '#c026d3', '#f59e0b', '#10b981', '#0ea5e9', '#f43f5e'];
+  const pieces = Array.from({ length: 110 }, () => ({
+    x: Math.random() * width,
+    y: -20 - Math.random() * height * 0.35,
+    vx: (Math.random() - 0.5) * 2.2,
+    vy: 2.4 + Math.random() * 3.4,
+    size: 5 + Math.random() * 6,
+    angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.22,
+    color: palette[Math.floor(Math.random() * palette.length)],
+    shape: Math.random() < 0.28 ? 'circle' : 'rect',
+    sway: Math.random() * Math.PI * 2,
+    swaySpeed: 0.02 + Math.random() * 0.03,
+  }));
+
+  const duration = 3600;
+  const startedAt = performance.now();
+  let lastFrameAt = startedAt;
+  announceCelebration(percent);
+
+  function drawFrame(now) {
+    const elapsed = now - startedAt;
+    const delta = Math.min((now - lastFrameAt) / (1000 / 60), 3);
+    lastFrameAt = now;
+
+    const fade = elapsed > duration - 600
+      ? Math.max(0, (duration - elapsed) / 600)
+      : 1;
+
+    context.clearRect(0, 0, width, height);
+    context.globalAlpha = fade;
+
+    pieces.forEach((piece) => {
+      piece.x += (piece.vx + Math.sin(piece.sway) * 0.8) * delta;
+      piece.y += piece.vy * delta;
+      piece.vy += 0.035 * delta;
+      piece.angle += piece.spin * delta;
+      piece.sway += piece.swaySpeed * delta;
+
+      context.save();
+      context.translate(piece.x, piece.y);
+      context.rotate(piece.angle);
+      context.fillStyle = piece.color;
+
+      if (piece.shape === 'circle') {
+        context.beginPath();
+        context.arc(0, 0, piece.size / 2, 0, Math.PI * 2);
+        context.fill();
+      } else {
+        context.fillRect(-piece.size / 2, -piece.size / 4, piece.size, piece.size / 2);
+      }
+
+      context.restore();
+    });
+
+    if (elapsed >= duration) {
+      stopConfetti();
+      return;
+    }
+
+    confettiFrame = window.requestAnimationFrame(drawFrame);
+  }
+
+  confettiFrame = window.requestAnimationFrame(drawFrame);
+}
+
+/* ============================================================
    Render: keseluruhan
    ============================================================ */
 
@@ -1138,6 +1382,8 @@ function updateStats() {
 }
 
 function switchTab(tabName) {
+  stopConfetti();
+
   els.tabButtons.forEach((button) => {
     const active = button.dataset.tab === tabName;
     button.classList.toggle('is-active', active);
@@ -1234,13 +1480,13 @@ function applyLanguage(nextLang, options = {}) {
     renderCard({ animate: false, resetFace: false });
 
     if (!els.quizResult.classList.contains('hidden')) {
-      showQuizResult();
+      showQuizResult({ celebrate: false });
     } else if (state.quiz.length > 0) {
       renderQuizQuestion();
     }
 
     if (!els.tfResult.classList.contains('hidden')) {
-      showTfResult();
+      showTfResult({ celebrate: false });
     } else if (state.tf.length > 0) {
       renderTfQuestion();
     }
@@ -1380,9 +1626,11 @@ function restoreSavedNotes() {
   state.cardIndex = 0;
   state.quizIndex = 0;
   state.score = 0;
+  state.streak = 0;
   state.answered = false;
   state.tfIndex = 0;
   state.tfScore = 0;
+  state.tfStreak = 0;
   state.tfAnswered = false;
 
   renderWorkspace();
@@ -1401,7 +1649,7 @@ function buildExportData() {
 
   return {
     app: 'AI Study Buddy',
-    version: 5,
+    version: 6,
     exportedAt: new Date().toISOString(),
     language: lang,
     notes: els.notes.value,
@@ -1577,9 +1825,11 @@ function generate() {
       state.cardIndex = 0;
       state.quizIndex = 0;
       state.score = 0;
+      state.streak = 0;
       state.answered = false;
       state.tfIndex = 0;
       state.tfScore = 0;
+      state.tfStreak = 0;
       state.tfAnswered = false;
 
       renderWorkspace();
@@ -1624,10 +1874,18 @@ function startOver() {
   state.cardIndex = 0;
   state.quizIndex = 0;
   state.score = 0;
+  state.streak = 0;
   state.answered = false;
   state.tfIndex = 0;
   state.tfScore = 0;
+  state.tfStreak = 0;
   state.tfAnswered = false;
+
+  renderQuizStreak();
+  renderTfStreak();
+  stopConfetti();
+  els.quizCelebration.hidden = true;
+  els.tfCelebration.hidden = true;
 
   els.notes.value = '';
   updateCounters();
