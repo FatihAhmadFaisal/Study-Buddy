@@ -106,6 +106,7 @@ const TRANSLATIONS = {
 
     'tabs.cards': 'Flashcard',
     'tabs.quiz': 'Kuis',
+    'tabs.tf': 'True / False',
     'tabs.aria': 'Mode belajar',
     'action.new': 'Catatan baru',
 
@@ -121,6 +122,7 @@ const TRANSLATIONS = {
     'card.prevAria': 'Kartu sebelumnya',
     'card.nextAria': 'Kartu berikutnya',
     'card.flip': 'Balik kartu',
+    'card.shuffle': 'Acak Kartu',
     'card.showQuestion': 'Lihat pertanyaan',
     'card.question': 'Apa yang dimaksud dengan “{term}”?',
     'card.aria': 'Flashcard. Tekan Enter atau klik untuk membalik.',
@@ -135,11 +137,26 @@ const TRANSLATIONS = {
     'quiz.wrongTitle': 'Belum tepat.',
     'quiz.next': 'Soal berikutnya →',
     'quiz.seeResult': 'Lihat hasil',
+    'quiz.shuffle': 'Acak Kuis',
     'quiz.emptyTitle': 'Kuis belum bisa dibuat',
     'quiz.emptyDesc': 'Butuh minimal dua poin dengan istilah berbeda. Coba tulis catatan dengan format <code class="code-chip">Istilah: penjelasan</code>.',
     'quiz.optionsAria': 'Pilihan jawaban',
     'quiz.resultLabel': 'Hasil kuis',
     'quiz.reviewLabel': 'Materi untuk diulang',
+
+    'tf.counter': 'Soal {i} / {n}',
+    'tf.statementLabel': 'Pernyataan',
+    'tf.true': 'Benar',
+    'tf.false': 'Salah',
+    'tf.shuffle': 'Acak T/F',
+    'tf.emptyTitle': 'Kuis True / False belum bisa dibuat',
+    'tf.emptyDesc': 'Butuh minimal dua pasangan <code class="code-chip">Istilah: penjelasan</code> agar pernyataan benar dan salah bisa disusun.',
+    'tf.correctTitle': 'Tepat!',
+    'tf.wrongTitle': 'Belum tepat.',
+    'tf.explainTrue': 'Pernyataan itu benar: “{term}” memang cocok dengan penjelasan tersebut.',
+    'tf.explainFalse': 'Pernyataan itu salah. Penjelasan tersebut sebenarnya milik “{correctTerm}”.',
+    'tf.resultLabel': 'Hasil True / False',
+    'tf.retry': 'Ulangi kuis T/F',
 
     'result.retry': 'Ulangi kuis',
     'result.summary': '{score} dari {total} soal benar. {text}',
@@ -204,6 +221,7 @@ const TRANSLATIONS = {
 
     'tabs.cards': 'Flashcards',
     'tabs.quiz': 'Quiz',
+    'tabs.tf': 'True / False',
     'tabs.aria': 'Study mode',
     'action.new': 'New notes',
 
@@ -219,6 +237,7 @@ const TRANSLATIONS = {
     'card.prevAria': 'Previous card',
     'card.nextAria': 'Next card',
     'card.flip': 'Flip card',
+    'card.shuffle': 'Shuffle Cards',
     'card.showQuestion': 'Show question',
     'card.question': 'What does “{term}” mean?',
     'card.aria': 'Flashcard. Press Enter or click to flip.',
@@ -233,11 +252,26 @@ const TRANSLATIONS = {
     'quiz.wrongTitle': 'Not quite.',
     'quiz.next': 'Next question →',
     'quiz.seeResult': 'See results',
+    'quiz.shuffle': 'Shuffle Quiz',
     'quiz.emptyTitle': "Quiz can't be created yet",
     'quiz.emptyDesc': 'You need at least two points with different terms. Try notes formatted as <code class="code-chip">Term: explanation</code>.',
     'quiz.optionsAria': 'Answer choices',
     'quiz.resultLabel': 'Quiz result',
     'quiz.reviewLabel': 'Topics to review',
+
+    'tf.counter': 'Question {i} / {n}',
+    'tf.statementLabel': 'Statement',
+    'tf.true': 'True',
+    'tf.false': 'False',
+    'tf.shuffle': 'Shuffle T/F',
+    'tf.emptyTitle': "True / False quiz can't be created yet",
+    'tf.emptyDesc': 'You need at least two <code class="code-chip">Term: explanation</code> pairs so true and false statements can be created.',
+    'tf.correctTitle': 'Correct!',
+    'tf.wrongTitle': 'Not quite.',
+    'tf.explainTrue': 'That statement is true: “{term}” does match that explanation.',
+    'tf.explainFalse': 'That statement is false. That explanation actually belongs to “{correctTerm}”.',
+    'tf.resultLabel': 'True / False result',
+    'tf.retry': 'Retry T/F quiz',
 
     'result.retry': 'Retry quiz',
     'result.summary': '{score} of {total} correct. {text}',
@@ -288,6 +322,10 @@ const state = {
   quizIndex: 0,
   score: 0,
   answered: false,
+  tf: [],
+  tfIndex: 0,
+  tfScore: 0,
+  tfAnswered: false,
   loading: false,
 };
 
@@ -323,6 +361,7 @@ const els = {
   langButtons: Array.from(document.querySelectorAll('.lang-btn')),
   tabCards: $('#tab-cards'),
   tabQuiz: $('#tab-quiz'),
+  tabTf: $('#tab-tf'),
 
   cardCounter: $('#card-counter'),
   cardProgress: $('#card-progress'),
@@ -335,6 +374,7 @@ const els = {
   cardPrev: $('#card-prev'),
   cardNext: $('#card-next'),
   cardFlip: $('#card-flip'),
+  cardShuffle: $('#card-shuffle'),
 
   quizBody: $('#quiz-body'),
   quizEmpty: $('#quiz-empty'),
@@ -347,6 +387,7 @@ const els = {
   quizOptions: $('#quiz-options'),
   quizFeedback: $('#quiz-feedback'),
   quizNext: $('#quiz-next'),
+  quizShuffle: $('#quiz-shuffle'),
 
   resultRing: $('#result-ring'),
   resultPercent: $('#result-percent'),
@@ -354,8 +395,30 @@ const els = {
   resultText: $('#result-text'),
   resultReview: $('#result-review'),
   btnRetry: $('#btn-retry'),
+  btnShuffleResult: $('#btn-shuffle-result'),
   btnNew: $('#btn-new'),
   btnNew2: $('#btn-new-2'),
+
+  tfEmpty: $('#tf-empty'),
+  tfBody: $('#tf-body'),
+  tfResult: $('#tf-result'),
+  tfCounter: $('#tf-counter'),
+  tfScore: $('#tf-score'),
+  tfProgress: $('#tf-progress'),
+  tfTerm: $('#tf-term'),
+  tfDefinition: $('#tf-definition'),
+  tfFeedback: $('#tf-feedback'),
+  tfNext: $('#tf-next'),
+  tfTrue: $('#tf-true'),
+  tfFalse: $('#tf-false'),
+  tfShuffle: $('#tf-shuffle'),
+  tfResultRing: $('#tf-result-ring'),
+  tfResultPercent: $('#tf-result-percent'),
+  tfResultTitle: $('#tf-result-title'),
+  tfResultText: $('#tf-result-text'),
+  btnTfRetry: $('#btn-tf-retry'),
+  btnTfShuffleResult: $('#btn-tf-shuffle-result'),
+  btnTfNew: $('#btn-tf-new'),
 };
 
 /* ============================================================
@@ -367,7 +430,8 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => map[char]);
 }
 
-function shuffle(list) {
+/** Fisher-Yates shuffle: acak array tanpa mengubah array asli. */
+function shuffleArray(list) {
   const array = list.slice();
   for (let i = array.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -546,7 +610,7 @@ function makeQuestion(card, cards) {
 
   if (canCloze && (!canMatch || Math.random() < 0.5)) {
     const blanked = `${card.source.slice(0, termIndex)}[____]${card.source.slice(termIndex + card.term.length)}`;
-    const options = shuffle([card.term, ...shuffle(otherTerms).slice(0, 3)]);
+    const options = shuffleArray([card.term, ...shuffleArray(otherTerms).slice(0, 3)]);
 
     return {
       type: 'cloze',
@@ -559,7 +623,7 @@ function makeQuestion(card, cards) {
   }
 
   if (canMatch) {
-    const options = shuffle([card.definition, ...shuffle(otherDefinitions).slice(0, 3)]);
+    const options = shuffleArray([card.definition, ...shuffleArray(otherDefinitions).slice(0, 3)]);
 
     return {
       type: 'match',
@@ -590,12 +654,84 @@ function questionExplanation(question) {
 function buildQuiz(cards) {
   const questions = [];
 
-  shuffle(cards).forEach((card) => {
+  shuffleArray(cards).forEach((card) => {
     const question = makeQuestion(card, cards);
     if (question) questions.push(question);
   });
 
-  return shuffle(questions).slice(0, 8);
+  return shuffleArray(questions).slice(0, 8);
+}
+
+/* ============================================================
+   Penyusunan kuis True / False
+   ============================================================ */
+
+/**
+ * Susun pernyataan dari pasangan definisi (Istilah: penjelasan).
+ *
+ * - 3 pasangan atau lebih: minimal 2 pernyataan TRUE, sisanya acak.
+ * - Kurang dari 3 pasangan: kombinasi TRUE/FALSE murni acak.
+ */
+function buildTrueFalseQuestions(cards) {
+  const pairs = cards.filter((card) => card.kind === 'definition');
+  if (pairs.length < 2) return [];
+
+  const wantsTrue = pairs.map(() => Math.random() < 0.5);
+
+  if (pairs.length >= 3) {
+    let trueCount = wantsTrue.filter(Boolean).length;
+    for (let i = 0; trueCount < 2 && i < wantsTrue.length; i += 1) {
+      if (!wantsTrue[i]) {
+        wantsTrue[i] = true;
+        trueCount += 1;
+      }
+    }
+  }
+
+  const flags = shuffleArray(wantsTrue);
+
+  const questions = pairs.map((pair, index) => {
+    if (flags[index]) {
+      return {
+        term: pair.term,
+        definition: pair.definition,
+        isTrue: true,
+        correctTerm: pair.term,
+        selected: undefined,
+        correct: undefined,
+      };
+    }
+
+    // Pernyataan FALSE memakai penjelasan milik istilah lain.
+    const others = pairs.filter(
+      (item) => item !== pair
+        && item.definition.trim().toLowerCase() !== pair.definition.trim().toLowerCase(),
+    );
+
+    if (others.length === 0) {
+      return {
+        term: pair.term,
+        definition: pair.definition,
+        isTrue: true,
+        correctTerm: pair.term,
+        selected: undefined,
+        correct: undefined,
+      };
+    }
+
+    const other = others[Math.floor(Math.random() * others.length)];
+
+    return {
+      term: pair.term,
+      definition: other.definition,
+      isTrue: false,
+      correctTerm: other.term,
+      selected: undefined,
+      correct: undefined,
+    };
+  });
+
+  return shuffleArray(questions);
 }
 
 /* ============================================================
@@ -664,6 +800,23 @@ function goToCard(step) {
   const next = state.cardIndex + step;
   if (next < 0 || next >= state.cards.length) return;
   state.cardIndex = next;
+  renderCard();
+}
+
+/** Acak urutan flashcard tanpa mengubah isi catatan atau data kartu. */
+function shuffleCards() {
+  if (state.cards.length < 2) return;
+
+  const current = state.cards[state.cardIndex];
+  state.cards = shuffleArray(state.cards);
+
+  // Pastikan kartu yang tampil benar-benar berbeda dari kartu sebelumnya.
+  if (state.cards[0] === current) {
+    const swapIndex = 1 + Math.floor(Math.random() * (state.cards.length - 1));
+    [state.cards[0], state.cards[swapIndex]] = [state.cards[swapIndex], state.cards[0]];
+  }
+
+  state.cardIndex = 0;
   renderCard();
 }
 
@@ -759,6 +912,13 @@ function nextQuestion() {
   renderQuizQuestion();
 }
 
+function scoreCopy(percent) {
+  if (percent >= 90) return { title: 'result.great', text: 'result.greatText' };
+  if (percent >= 70) return { title: 'result.good', text: 'result.goodText' };
+  if (percent >= 50) return { title: 'result.ok', text: 'result.okText' };
+  return { title: 'result.low', text: 'result.lowText' };
+}
+
 function showQuizResult() {
   const total = state.quiz.length;
   const percent = total ? Math.round((state.score / total) * 100) : 0;
@@ -772,25 +932,13 @@ function showQuizResult() {
   els.resultRing.style.setProperty('--p', String(percent));
   els.resultPercent.textContent = `${percent}%`;
 
-  let titleKey = 'result.low';
-  let textKey = 'result.lowText';
+  const copy = scoreCopy(percent);
 
-  if (percent >= 90) {
-    titleKey = 'result.great';
-    textKey = 'result.greatText';
-  } else if (percent >= 70) {
-    titleKey = 'result.good';
-    textKey = 'result.goodText';
-  } else if (percent >= 50) {
-    titleKey = 'result.ok';
-    textKey = 'result.okText';
-  }
-
-  els.resultTitle.textContent = t(titleKey);
+  els.resultTitle.textContent = t(copy.title);
   els.resultText.textContent = t('result.summary', {
     score: state.score,
     total,
-    text: t(textKey),
+    text: t(copy.text),
   });
 
   const missed = state.quiz.filter((question) => question.correct === false);
@@ -824,6 +972,161 @@ function resetQuiz() {
   els.quizBody.classList.remove('hidden');
 }
 
+/** Acak urutan soal, reset progres, lalu mulai lagi dari soal pertama. */
+function shuffleQuiz() {
+  if (state.quiz.length < 2) return;
+
+  const current = state.quiz[state.quizIndex];
+  state.quiz = shuffleArray(state.quiz);
+
+  // Pastikan soal baru tidak sama dengan soal yang sedang tampil.
+  if (state.quiz[0] === current) {
+    const swapIndex = 1 + Math.floor(Math.random() * (state.quiz.length - 1));
+    [state.quiz[0], state.quiz[swapIndex]] = [state.quiz[swapIndex], state.quiz[0]];
+  }
+
+  resetQuiz();
+  renderQuizQuestion();
+}
+
+/* ============================================================
+   Render: kuis True / False
+   ============================================================ */
+
+function renderTfQuestion() {
+  const question = state.tf[state.tfIndex];
+  if (!question) return;
+
+  const answered = question.selected !== undefined && question.selected !== null;
+  state.tfAnswered = answered;
+
+  els.tfCounter.textContent = t('tf.counter', { i: state.tfIndex + 1, n: state.tf.length });
+  els.tfScore.textContent = t('quiz.score', { n: state.tfScore });
+  els.tfProgress.style.width = `${((state.tfIndex + (answered ? 1 : 0)) / state.tf.length) * 100}%`;
+
+  els.tfTerm.textContent = question.term;
+  els.tfDefinition.textContent = question.definition;
+
+  [els.tfTrue, els.tfFalse].forEach((button) => {
+    button.disabled = false;
+    button.classList.remove('is-selected', 'is-correct', 'is-wrong', 'is-dim');
+  });
+
+  els.tfFeedback.className = 'quiz-feedback mt-4 hidden';
+  els.tfFeedback.innerHTML = '';
+  els.tfNext.classList.add('hidden');
+
+  // Saat bahasa diganti, jawaban yang sudah dipilih tetap ditampilkan.
+  if (answered) paintTfAnswer(question);
+}
+
+function selectTfAnswer(answer) {
+  if (state.tfAnswered) return;
+
+  const question = state.tf[state.tfIndex];
+  if (!question) return;
+
+  state.tfAnswered = true;
+  question.selected = answer;
+  question.correct = answer === question.isTrue;
+  if (question.correct) state.tfScore += 1;
+
+  els.tfScore.textContent = t('quiz.score', { n: state.tfScore });
+  els.tfProgress.style.width = `${((state.tfIndex + 1) / state.tf.length) * 100}%`;
+
+  paintTfAnswer(question);
+}
+
+function paintTfAnswer(question) {
+  [
+    { button: els.tfTrue, value: true },
+    { button: els.tfFalse, value: false },
+  ].forEach(({ button, value }) => {
+    button.disabled = true;
+    button.classList.remove('is-selected', 'is-correct', 'is-wrong', 'is-dim');
+
+    if (value === question.selected) {
+      button.classList.add('is-selected');
+      button.classList.add(question.correct ? 'is-correct' : 'is-wrong');
+    } else {
+      button.classList.add('is-dim');
+    }
+  });
+
+  els.tfFeedback.className = `quiz-feedback mt-4 animate-in ${question.correct ? 'is-correct' : 'is-wrong'}`;
+  els.tfFeedback.innerHTML = `
+    <p class="font-extrabold">${question.correct ? t('tf.correctTitle') : t('tf.wrongTitle')}</p>
+    <p class="mt-1">${escapeHtml(
+      question.isTrue
+        ? t('tf.explainTrue', { term: question.term })
+        : t('tf.explainFalse', { term: question.term, correctTerm: question.correctTerm }),
+    )}</p>
+  `;
+
+  els.tfNext.textContent = state.tfIndex === state.tf.length - 1
+    ? t('quiz.seeResult')
+    : t('quiz.next');
+  els.tfNext.classList.remove('hidden');
+}
+
+function nextTfQuestion() {
+  if (!state.tfAnswered) return;
+
+  if (state.tfIndex >= state.tf.length - 1) {
+    showTfResult();
+    return;
+  }
+
+  state.tfIndex += 1;
+  renderTfQuestion();
+}
+
+function showTfResult() {
+  const total = state.tf.length;
+  const percent = total ? Math.round((state.tfScore / total) * 100) : 0;
+
+  els.tfBody.classList.add('hidden');
+  els.tfResult.classList.remove('hidden');
+  els.tfResult.classList.remove('animate-in');
+  void els.tfResult.offsetWidth;
+  els.tfResult.classList.add('animate-in');
+
+  els.tfResultRing.style.setProperty('--p', String(percent));
+  els.tfResultPercent.textContent = `${percent}%`;
+
+  const copy = scoreCopy(percent);
+
+  els.tfResultTitle.textContent = t(copy.title);
+  els.tfResultText.textContent = t('result.summary', {
+    score: state.tfScore,
+    total,
+    text: t(copy.text),
+  });
+}
+
+function resetTf() {
+  state.tfIndex = 0;
+  state.tfScore = 0;
+  state.tfAnswered = false;
+  state.tf.forEach((question) => {
+    question.selected = undefined;
+    question.correct = undefined;
+  });
+
+  els.tfResult.classList.add('hidden');
+  els.tfBody.classList.remove('hidden');
+}
+
+/** Acak ulang kombinasi + urutan soal T/F, lalu mulai dari awal. */
+function shuffleTf() {
+  const questions = buildTrueFalseQuestions(state.cards);
+  if (questions.length === 0) return;
+
+  state.tf = questions;
+  resetTf();
+  renderTfQuestion();
+}
+
 /* ============================================================
    Render: keseluruhan
    ============================================================ */
@@ -835,16 +1138,15 @@ function updateStats() {
 }
 
 function switchTab(tabName) {
-  const isCards = tabName === 'cards';
-
   els.tabButtons.forEach((button) => {
     const active = button.dataset.tab === tabName;
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-selected', String(active));
   });
 
-  els.tabCards.classList.toggle('hidden', !isCards);
-  els.tabQuiz.classList.toggle('hidden', isCards);
+  els.tabCards.classList.toggle('hidden', tabName !== 'cards');
+  els.tabQuiz.classList.toggle('hidden', tabName !== 'quiz');
+  els.tabTf.classList.toggle('hidden', tabName !== 'tf');
 }
 
 function renderWorkspace() {
@@ -853,6 +1155,11 @@ function renderWorkspace() {
   els.studyEmpty.classList.toggle('hidden', hasCards);
   els.studyPanels.classList.toggle('hidden', !hasCards);
   updateStats();
+  els.cardShuffle.disabled = state.cards.length < 2;
+  els.quizShuffle.disabled = state.quiz.length < 2;
+  els.btnShuffleResult.disabled = state.quiz.length < 2;
+  els.tfShuffle.disabled = state.tf.length < 2;
+  els.btnTfShuffleResult.disabled = state.tf.length < 2;
 
   if (!hasCards) return;
 
@@ -867,6 +1174,16 @@ function renderWorkspace() {
     els.quizBody.classList.add('hidden');
     els.quizResult.classList.add('hidden');
     els.quizEmpty.classList.remove('hidden');
+  }
+
+  resetTf();
+  if (state.tf.length > 0) {
+    els.tfEmpty.classList.add('hidden');
+    renderTfQuestion();
+  } else {
+    els.tfBody.classList.add('hidden');
+    els.tfResult.classList.add('hidden');
+    els.tfEmpty.classList.remove('hidden');
   }
 
   switchTab('cards');
@@ -920,6 +1237,12 @@ function applyLanguage(nextLang, options = {}) {
       showQuizResult();
     } else if (state.quiz.length > 0) {
       renderQuizQuestion();
+    }
+
+    if (!els.tfResult.classList.contains('hidden')) {
+      showTfResult();
+    } else if (state.tf.length > 0) {
+      renderTfQuestion();
     }
   }
 
@@ -1053,10 +1376,14 @@ function restoreSavedNotes() {
 
   state.cards = cards;
   state.quiz = buildQuiz(cards);
+  state.tf = buildTrueFalseQuestions(cards);
   state.cardIndex = 0;
   state.quizIndex = 0;
   state.score = 0;
   state.answered = false;
+  state.tfIndex = 0;
+  state.tfScore = 0;
+  state.tfAnswered = false;
 
   renderWorkspace();
 }
@@ -1074,7 +1401,7 @@ function buildExportData() {
 
   return {
     app: 'AI Study Buddy',
-    version: 3,
+    version: 5,
     exportedAt: new Date().toISOString(),
     language: lang,
     notes: els.notes.value,
@@ -1083,6 +1410,7 @@ function buildExportData() {
       questions: state.quiz.length,
       answered,
       correct: state.score,
+      trueFalse: state.tf.length,
     },
     cards: state.cards.map((card) => ({
       kind: card.kind,
@@ -1099,6 +1427,14 @@ function buildExportData() {
       options: question.options,
       answerIndex: question.answerIndex,
       note: question.note,
+      selected: question.selected ?? null,
+      correct: question.correct ?? null,
+    })),
+    trueFalse: state.tf.map((question) => ({
+      term: question.term,
+      definition: question.definition,
+      isTrue: question.isTrue,
+      correctTerm: question.correctTerm,
       selected: question.selected ?? null,
       correct: question.correct ?? null,
     })),
@@ -1237,10 +1573,14 @@ function generate() {
 
       state.cards = cards;
       state.quiz = buildQuiz(cards);
+      state.tf = buildTrueFalseQuestions(cards);
       state.cardIndex = 0;
       state.quizIndex = 0;
       state.score = 0;
       state.answered = false;
+      state.tfIndex = 0;
+      state.tfScore = 0;
+      state.tfAnswered = false;
 
       renderWorkspace();
       els.studyPanels.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1280,10 +1620,14 @@ function startOver() {
 
   state.cards = [];
   state.quiz = [];
+  state.tf = [];
   state.cardIndex = 0;
   state.quizIndex = 0;
   state.score = 0;
   state.answered = false;
+  state.tfIndex = 0;
+  state.tfScore = 0;
+  state.tfAnswered = false;
 
   els.notes.value = '';
   updateCounters();
@@ -1297,6 +1641,11 @@ function startOver() {
 function retryQuiz() {
   resetQuiz();
   renderQuizQuestion();
+}
+
+function retryTf() {
+  resetTf();
+  renderTfQuestion();
 }
 
 /* ============================================================
@@ -1313,6 +1662,7 @@ els.btnSample.addEventListener('click', loadSample);
 els.btnNew.addEventListener('click', startOver);
 els.btnNew2.addEventListener('click', startOver);
 els.btnRetry.addEventListener('click', retryQuiz);
+els.btnShuffleResult.addEventListener('click', shuffleQuiz);
 
 els.btnClear.addEventListener('click', handleClearClick);
 els.btnExport.addEventListener('click', exportNotes);
@@ -1330,6 +1680,7 @@ els.flashcard.addEventListener('keydown', (event) => {
 });
 
 els.cardFlip.addEventListener('click', toggleFlip);
+els.cardShuffle.addEventListener('click', shuffleCards);
 els.cardPrev.addEventListener('click', () => goToCard(-1));
 els.cardNext.addEventListener('click', () => goToCard(1));
 
@@ -1340,6 +1691,15 @@ els.quizOptions.addEventListener('click', (event) => {
 });
 
 els.quizNext.addEventListener('click', nextQuestion);
+els.quizShuffle.addEventListener('click', shuffleQuiz);
+
+els.tfTrue.addEventListener('click', () => selectTfAnswer(true));
+els.tfFalse.addEventListener('click', () => selectTfAnswer(false));
+els.tfNext.addEventListener('click', nextTfQuestion);
+els.tfShuffle.addEventListener('click', shuffleTf);
+els.btnTfRetry.addEventListener('click', retryTf);
+els.btnTfShuffleResult.addEventListener('click', shuffleTf);
+els.btnTfNew.addEventListener('click', startOver);
 
 els.tabButtons.forEach((button) => {
   button.addEventListener('click', () => switchTab(button.dataset.tab));
@@ -1361,6 +1721,7 @@ document.addEventListener('keydown', (event) => {
 
   const cardsVisible = !els.tabCards.classList.contains('hidden');
   const quizVisible = !els.tabQuiz.classList.contains('hidden');
+  const tfVisible = !els.tabTf.classList.contains('hidden');
 
   if (cardsVisible) {
     if (event.key === 'ArrowRight') {
@@ -1386,6 +1747,21 @@ document.addEventListener('keydown', (event) => {
     } else if (event.key === 'Enter' && state.answered && tag !== 'button') {
       event.preventDefault();
       nextQuestion();
+    }
+  }
+
+  if (tfVisible && !els.tfBody.classList.contains('hidden')) {
+    const key = event.key.toLowerCase();
+
+    if (key === 't' || key === 'b') {
+      event.preventDefault();
+      selectTfAnswer(true);
+    } else if (key === 'f' || key === 's') {
+      event.preventDefault();
+      selectTfAnswer(false);
+    } else if (event.key === 'Enter' && state.tfAnswered && tag !== 'button') {
+      event.preventDefault();
+      nextTfQuestion();
     }
   }
 });
