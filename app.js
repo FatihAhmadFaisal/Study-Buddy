@@ -683,6 +683,30 @@ function buildQuiz(cards) {
   return shuffleArray(questions).slice(0, 8);
 }
 
+/**
+ * Acak ulang opsi satu soal tanpa kehilangan jawaban benar.
+ * Opsi ditandai sebelum diacak agar indeks jawaban tetap terlacak dengan tepat.
+ */
+function shuffleQuestionOptions(question) {
+  if (!Array.isArray(question.options) || question.options.length < 2) return;
+  if (!Number.isInteger(question.answerIndex)) return;
+  if (question.answerIndex < 0 || question.answerIndex >= question.options.length) return;
+
+  const taggedOptions = question.options.map((option, index) => ({
+    option,
+    isCorrect: index === question.answerIndex,
+  }));
+
+  const shuffled = shuffleArray(taggedOptions);
+  question.options = shuffled.map((entry) => entry.option);
+  question.answerIndex = shuffled.findIndex((entry) => entry.isCorrect);
+}
+
+/** Acak ulang opsi untuk seluruh soal MCQ aktif. */
+function shuffleQuizOptions() {
+  state.quiz.forEach(shuffleQuestionOptions);
+}
+
 /* ============================================================
    Penyusunan kuis True / False
    ============================================================ */
@@ -1002,6 +1026,7 @@ function resetQuiz() {
     question.correct = undefined;
     question.selected = undefined;
   });
+  shuffleQuizOptions();
 
   renderQuizStreak();
   stopConfetti();
@@ -1649,7 +1674,7 @@ function buildExportData() {
 
   return {
     app: 'AI Study Buddy',
-    version: 6,
+    version: 6.1,
     exportedAt: new Date().toISOString(),
     language: lang,
     notes: els.notes.value,
