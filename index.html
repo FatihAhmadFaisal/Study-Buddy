@@ -339,6 +339,38 @@
                   <span class="streak-flame" aria-hidden="true">🔥</span>
                   <span id="quiz-streak-value">0</span>
                 </span>
+                <div class="timer-control">
+                  <button
+                    id="quiz-timer"
+                    type="button"
+                    class="timer-btn"
+                    aria-haspopup="menu"
+                    aria-expanded="false"
+                    aria-controls="quiz-timer-menu"
+                    aria-label="Atur timer kuis"
+                    data-i18n-aria="timer.button"
+                  >
+                    <svg class="timer-ring" viewBox="0 0 36 36" aria-hidden="true">
+                      <circle class="timer-ring-track" cx="18" cy="18" r="15.5"></circle>
+                      <circle id="quiz-timer-progress" class="timer-ring-progress" cx="18" cy="18" r="15.5" pathLength="100"></circle>
+                    </svg>
+                    <span class="timer-icon" aria-hidden="true">&#9201;&#65039;</span>
+                  </button>
+                  <div
+                    id="quiz-timer-menu"
+                    class="timer-menu"
+                    role="menu"
+                    aria-label="Pilih durasi timer"
+                    data-i18n-aria="timer.menu"
+                    hidden
+                  >
+                    <p class="timer-menu-title" data-i18n="timer.menuTitle" aria-hidden="true">Durasi timer</p>
+                    <button type="button" class="timer-option" role="menuitemradio" aria-checked="false" data-seconds="5">5 detik</button>
+                    <button type="button" class="timer-option" role="menuitemradio" aria-checked="false" data-seconds="10">10 detik</button>
+                    <button type="button" class="timer-option" role="menuitemradio" aria-checked="false" data-seconds="30">30 detik</button>
+                    <button type="button" class="timer-option" role="menuitemradio" aria-checked="false" data-seconds="60">60 detik</button>
+                  </div>
+                </div>
                 <button id="quiz-shuffle" type="button" class="shuffle-btn">
                   <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
                     <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke-linecap="round" stroke-linejoin="round" />
@@ -409,6 +441,38 @@
                   <span class="streak-flame" aria-hidden="true">🔥</span>
                   <span id="tf-streak-value">0</span>
                 </span>
+                <div class="timer-control">
+                  <button
+                    id="tf-timer"
+                    type="button"
+                    class="timer-btn"
+                    aria-haspopup="menu"
+                    aria-expanded="false"
+                    aria-controls="tf-timer-menu"
+                    aria-label="Atur timer kuis"
+                    data-i18n-aria="timer.button"
+                  >
+                    <svg class="timer-ring" viewBox="0 0 36 36" aria-hidden="true">
+                      <circle class="timer-ring-track" cx="18" cy="18" r="15.5"></circle>
+                      <circle id="tf-timer-progress" class="timer-ring-progress" cx="18" cy="18" r="15.5" pathLength="100"></circle>
+                    </svg>
+                    <span class="timer-icon" aria-hidden="true">&#9201;&#65039;</span>
+                  </button>
+                  <div
+                    id="tf-timer-menu"
+                    class="timer-menu"
+                    role="menu"
+                    aria-label="Pilih durasi timer"
+                    data-i18n-aria="timer.menu"
+                    hidden
+                  >
+                    <p class="timer-menu-title" data-i18n="timer.menuTitle" aria-hidden="true">Durasi timer</p>
+                    <button type="button" class="timer-option" role="menuitemradio" aria-checked="false" data-seconds="5">5 detik</button>
+                    <button type="button" class="timer-option" role="menuitemradio" aria-checked="false" data-seconds="10">10 detik</button>
+                    <button type="button" class="timer-option" role="menuitemradio" aria-checked="false" data-seconds="30">30 detik</button>
+                    <button type="button" class="timer-option" role="menuitemradio" aria-checked="false" data-seconds="60">60 detik</button>
+                  </div>
+                </div>
                 <button id="tf-shuffle" type="button" class="shuffle-btn">
                   <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
                     <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke-linecap="round" stroke-linejoin="round" />

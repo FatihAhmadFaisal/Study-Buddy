@@ -158,6 +158,13 @@ const TRANSLATIONS = {
     'tf.resultLabel': 'Hasil True / False',
     'tf.retry': 'Ulangi kuis T/F',
 
+    'timer.button': 'Atur timer kuis',
+    'timer.menu': 'Pilih durasi timer',
+    'timer.menuTitle': 'Durasi timer',
+    'timer.seconds': '{n} detik',
+    'timer.timeUpTitle': 'Waktu habis!',
+    'timer.timeUpNote': 'Soal dianggap salah.',
+
     'streak.aria': 'Jawaban benar beruntun: {n}',
     'streak.title': 'Jawaban benar beruntun',
     'celebrate.badge': 'Skor luar biasa!',
@@ -277,6 +284,13 @@ const TRANSLATIONS = {
     'tf.explainFalse': 'That statement is false. That explanation actually belongs to “{correctTerm}”.',
     'tf.resultLabel': 'True / False result',
     'tf.retry': 'Retry T/F quiz',
+
+    'timer.button': 'Set quiz timer',
+    'timer.menu': 'Choose timer duration',
+    'timer.menuTitle': 'Timer duration',
+    'timer.seconds': '{n} seconds',
+    'timer.timeUpTitle': "Time's up!",
+    'timer.timeUpNote': 'This question is marked incorrect.',
 
     'streak.aria': 'Correct answer streak: {n}',
     'streak.title': 'Consecutive correct answers',
@@ -402,6 +416,10 @@ const els = {
   quizFeedback: $('#quiz-feedback'),
   quizNext: $('#quiz-next'),
   quizShuffle: $('#quiz-shuffle'),
+  quizTimer: $('#quiz-timer'),
+  quizTimerMenu: $('#quiz-timer-menu'),
+  quizTimerProgress: $('#quiz-timer-progress'),
+  quizTimerOptions: Array.from(document.querySelectorAll('#quiz-timer-menu .timer-option')),
 
   resultRing: $('#result-ring'),
   resultPercent: $('#result-percent'),
@@ -429,6 +447,10 @@ const els = {
   tfTrue: $('#tf-true'),
   tfFalse: $('#tf-false'),
   tfShuffle: $('#tf-shuffle'),
+  tfTimer: $('#tf-timer'),
+  tfTimerMenu: $('#tf-timer-menu'),
+  tfTimerProgress: $('#tf-timer-progress'),
+  tfTimerOptions: Array.from(document.querySelectorAll('#tf-timer-menu .timer-option')),
   tfResultRing: $('#tf-result-ring'),
   tfResultPercent: $('#tf-result-percent'),
   tfResultTitle: $('#tf-result-title'),
@@ -873,7 +895,8 @@ function renderQuizQuestion() {
   const question = state.quiz[state.quizIndex];
   if (!question) return;
 
-  const answered = question.selected !== undefined && question.selected !== null;
+  const answered = Boolean(question.timedOut)
+    || (question.selected !== undefined && question.selected !== null);
   state.answered = answered;
 
   els.quizCounter.textContent = t('quiz.counter', { i: state.quizIndex + 1, n: state.quiz.length });
@@ -907,6 +930,7 @@ function renderQuizQuestion() {
 
   // Saat bahasa diganti di tengah kuis, jawaban yang sudah dipilih tetap ditampilkan.
   if (answered) paintAnswer(question);
+  ensureTimerForQuestion(quizTimer);
 }
 
 function selectAnswer(index) {
@@ -917,7 +941,9 @@ function selectAnswer(index) {
 
   state.answered = true;
   question.selected = index;
+  question.timedOut = false;
   question.correct = index === question.answerIndex;
+  stopTimer(quizTimer, { deactivate: false });
 
   if (question.correct) {
     state.score += 1;
@@ -941,9 +967,16 @@ function paintAnswer(question) {
     else button.classList.add('is-dim');
   });
 
+  const feedbackTitle = question.correct
+    ? t('quiz.correctTitle')
+    : question.timedOut
+      ? t('timer.timeUpTitle')
+      : t('quiz.wrongTitle');
+
   els.quizFeedback.className = `quiz-feedback mt-4 animate-in ${question.correct ? 'is-correct' : 'is-wrong'}`;
   els.quizFeedback.innerHTML = `
-    <p class="font-extrabold">${question.correct ? t('quiz.correctTitle') : t('quiz.wrongTitle')}</p>
+    <p class="font-extrabold">${feedbackTitle}</p>
+    ${question.timedOut ? `<p class="mt-1 font-semibold">${t('timer.timeUpNote')}</p>` : ''}
     <p class="mt-1">${escapeHtml(questionExplanation(question))}</p>
   `;
 
@@ -955,6 +988,7 @@ function paintAnswer(question) {
 
 function nextQuestion() {
   if (!state.answered) return;
+  cancelTimerAdvance(quizTimer);
 
   if (state.quizIndex >= state.quiz.length - 1) {
     showQuizResult();
@@ -976,6 +1010,7 @@ function showQuizResult({ celebrate = true } = {}) {
   const total = state.quiz.length;
   const percent = total ? Math.round((state.score / total) * 100) : 0;
 
+  resetTimer(quizTimer);
   state.streak = 0;
   renderQuizStreak();
 
@@ -1025,7 +1060,9 @@ function resetQuiz() {
   state.quiz.forEach((question) => {
     question.correct = undefined;
     question.selected = undefined;
+    question.timedOut = false;
   });
+  resetTimer(quizTimer);
   shuffleQuizOptions();
 
   renderQuizStreak();
@@ -1060,7 +1097,8 @@ function renderTfQuestion() {
   const question = state.tf[state.tfIndex];
   if (!question) return;
 
-  const answered = question.selected !== undefined && question.selected !== null;
+  const answered = Boolean(question.timedOut)
+    || (question.selected !== undefined && question.selected !== null);
   state.tfAnswered = answered;
 
   els.tfCounter.textContent = t('tf.counter', { i: state.tfIndex + 1, n: state.tf.length });
@@ -1082,6 +1120,7 @@ function renderTfQuestion() {
 
   // Saat bahasa diganti, jawaban yang sudah dipilih tetap ditampilkan.
   if (answered) paintTfAnswer(question);
+  ensureTimerForQuestion(tfTimer);
 }
 
 function selectTfAnswer(answer) {
@@ -1092,7 +1131,9 @@ function selectTfAnswer(answer) {
 
   state.tfAnswered = true;
   question.selected = answer;
+  question.timedOut = false;
   question.correct = answer === question.isTrue;
+  stopTimer(tfTimer, { deactivate: false });
 
   if (question.correct) {
     state.tfScore += 1;
@@ -1116,7 +1157,9 @@ function paintTfAnswer(question) {
     button.disabled = true;
     button.classList.remove('is-selected', 'is-correct', 'is-wrong', 'is-dim');
 
-    if (value === question.selected) {
+    if (question.timedOut) {
+      button.classList.add(value === question.isTrue ? 'is-correct' : 'is-dim');
+    } else if (value === question.selected) {
       button.classList.add('is-selected');
       button.classList.add(question.correct ? 'is-correct' : 'is-wrong');
     } else {
@@ -1124,9 +1167,16 @@ function paintTfAnswer(question) {
     }
   });
 
+  const feedbackTitle = question.correct
+    ? t('tf.correctTitle')
+    : question.timedOut
+      ? t('timer.timeUpTitle')
+      : t('tf.wrongTitle');
+
   els.tfFeedback.className = `quiz-feedback mt-4 animate-in ${question.correct ? 'is-correct' : 'is-wrong'}`;
   els.tfFeedback.innerHTML = `
-    <p class="font-extrabold">${question.correct ? t('tf.correctTitle') : t('tf.wrongTitle')}</p>
+    <p class="font-extrabold">${feedbackTitle}</p>
+    ${question.timedOut ? `<p class="mt-1 font-semibold">${t('timer.timeUpNote')}</p>` : ''}
     <p class="mt-1">${escapeHtml(
       question.isTrue
         ? t('tf.explainTrue', { term: question.term })
@@ -1142,6 +1192,7 @@ function paintTfAnswer(question) {
 
 function nextTfQuestion() {
   if (!state.tfAnswered) return;
+  cancelTimerAdvance(tfTimer);
 
   if (state.tfIndex >= state.tf.length - 1) {
     showTfResult();
@@ -1156,6 +1207,7 @@ function showTfResult({ celebrate = true } = {}) {
   const total = state.tf.length;
   const percent = total ? Math.round((state.tfScore / total) * 100) : 0;
 
+  resetTimer(tfTimer);
   state.tfStreak = 0;
   renderTfStreak();
 
@@ -1188,7 +1240,9 @@ function resetTf() {
   state.tf.forEach((question) => {
     question.selected = undefined;
     question.correct = undefined;
+    question.timedOut = false;
   });
+  resetTimer(tfTimer);
 
   renderTfStreak();
   stopConfetti();
@@ -1397,6 +1451,318 @@ function launchConfetti(percent) {
 }
 
 /* ============================================================
+   Timer kuis
+   ============================================================ */
+
+const TIMER_DURATIONS = [5, 10, 30, 60];
+const TIMER_FEEDBACK_DELAY = 1300;
+
+function createTimerController({ button, menu, progress, options, isAvailable, onTimeout }) {
+  return {
+    button,
+    menu,
+    progress,
+    options,
+    isAvailable,
+    onTimeout,
+    duration: 0,
+    remaining: 0,
+    running: false,
+    deadline: 0,
+    frame: null,
+    advanceTimer: null,
+  };
+}
+
+const quizTimer = createTimerController({
+  button: els.quizTimer,
+  menu: els.quizTimerMenu,
+  progress: els.quizTimerProgress,
+  options: els.quizTimerOptions,
+  isAvailable: () => state.quiz.length > 0
+    && !state.answered
+    && !els.tabQuiz.classList.contains('hidden')
+    && !els.quizBody.classList.contains('hidden')
+    && els.quizResult.classList.contains('hidden'),
+  onTimeout: handleQuizTimeout,
+});
+
+const tfTimer = createTimerController({
+  button: els.tfTimer,
+  menu: els.tfTimerMenu,
+  progress: els.tfTimerProgress,
+  options: els.tfTimerOptions,
+  isAvailable: () => state.tf.length > 0
+    && !state.tfAnswered
+    && !els.tabTf.classList.contains('hidden')
+    && !els.tfBody.classList.contains('hidden')
+    && els.tfResult.classList.contains('hidden'),
+  onTimeout: handleTfTimeout,
+});
+
+// Status awal: timer nonaktif sampai ada soal yang siap dikerjakan.
+syncTimerAvailability(quizTimer);
+syncTimerAvailability(tfTimer);
+
+function timerFraction(controller) {
+  if (controller.duration <= 0) return 0;
+  return Math.max(0, Math.min(1, controller.remaining / (controller.duration * 1000)));
+}
+
+function paintTimer(controller) {
+  const fraction = timerFraction(controller);
+  controller.progress.style.strokeDashoffset = String(100 - fraction * 100);
+  controller.button.classList.toggle('is-low', controller.running && fraction <= 0.25);
+}
+
+function syncTimerOptions(controller) {
+  controller.options.forEach((option) => {
+    const seconds = Number(option.dataset.seconds);
+    const selected = controller.duration === seconds;
+    option.textContent = t('timer.seconds', { n: seconds });
+    option.classList.toggle('is-selected', selected);
+    option.setAttribute('aria-checked', String(selected));
+  });
+}
+
+function refreshTimerLabels(controller) {
+  controller.button.setAttribute('aria-label', t('timer.button'));
+  controller.button.title = t('timer.button');
+  controller.menu.setAttribute('aria-label', t('timer.menu'));
+
+  const title = controller.menu.querySelector('.timer-menu-title');
+  if (title) title.textContent = t('timer.menuTitle');
+
+  syncTimerOptions(controller);
+}
+
+function closeTimerMenu(controller, { restoreFocus = false } = {}) {
+  if (!controller.menu) return false;
+
+  const wasOpen = !controller.menu.hidden;
+  controller.menu.hidden = true;
+  controller.button.setAttribute('aria-expanded', 'false');
+
+  if (wasOpen && restoreFocus) controller.button.focus();
+  return wasOpen;
+}
+
+function closeAllTimerMenus(options = {}) {
+  const quizClosed = closeTimerMenu(quizTimer, options);
+  const tfClosed = closeTimerMenu(tfTimer, options);
+  return quizClosed || tfClosed;
+}
+
+function isTimerMenuOpen() {
+  return !quizTimer.menu.hidden || !tfTimer.menu.hidden;
+}
+
+function openTimerMenu(controller) {
+  if (controller.button.disabled) return;
+
+  closeAllTimerMenus();
+  syncTimerOptions(controller);
+  controller.menu.hidden = false;
+  controller.button.setAttribute('aria-expanded', 'true');
+}
+
+function toggleTimerMenu(controller) {
+  if (controller.menu.hidden) {
+    openTimerMenu(controller);
+  } else {
+    closeTimerMenu(controller);
+  }
+}
+
+function syncTimerAvailability(controller) {
+  const available = controller.isAvailable();
+  controller.button.disabled = !available;
+
+  if (!available) closeTimerMenu(controller);
+}
+
+function cancelTimerAdvance(controller) {
+  if (controller.advanceTimer === null) return;
+
+  window.clearTimeout(controller.advanceTimer);
+  controller.advanceTimer = null;
+}
+
+function scheduleTimerAdvance(controller, callback) {
+  cancelTimerAdvance(controller);
+  controller.advanceTimer = window.setTimeout(() => {
+    controller.advanceTimer = null;
+    callback();
+  }, TIMER_FEEDBACK_DELAY);
+}
+
+function stopTimer(controller, { deactivate = false } = {}) {
+  controller.running = false;
+
+  if (controller.frame !== null) {
+    window.cancelAnimationFrame(controller.frame);
+    controller.frame = null;
+  }
+
+  cancelTimerAdvance(controller);
+  closeTimerMenu(controller);
+  controller.button.classList.remove('is-low');
+
+  if (deactivate) {
+    controller.duration = 0;
+    controller.remaining = 0;
+    controller.progress.style.strokeDashoffset = '100';
+    controller.button.classList.remove('is-active', 'is-low', 'is-timeout');
+    syncTimerOptions(controller);
+  } else {
+    controller.button.classList.remove('is-timeout');
+    paintTimer(controller);
+    syncTimerOptions(controller);
+  }
+
+  syncTimerAvailability(controller);
+}
+
+function resetTimer(controller) {
+  stopTimer(controller, { deactivate: true });
+}
+
+function startTimer(controller, seconds) {
+  if (!controller.isAvailable() || !TIMER_DURATIONS.includes(seconds)) return;
+
+  stopTimer(controller, { deactivate: false });
+
+  controller.duration = seconds;
+  controller.remaining = seconds * 1000;
+  controller.deadline = performance.now() + controller.remaining;
+  controller.running = true;
+
+  controller.button.classList.add('is-active');
+  controller.button.classList.remove('is-low', 'is-timeout');
+  closeTimerMenu(controller);
+  syncTimerOptions(controller);
+  paintTimer(controller);
+  syncTimerAvailability(controller);
+
+  controller.frame = window.requestAnimationFrame((now) => tickTimer(controller, now));
+}
+
+function tickTimer(controller, now) {
+  if (!controller.running) return;
+
+  controller.remaining = Math.max(0, controller.deadline - now);
+  paintTimer(controller);
+
+  if (controller.remaining <= 0) {
+    finishTimer(controller);
+    return;
+  }
+
+  controller.frame = window.requestAnimationFrame((nextNow) => tickTimer(controller, nextNow));
+}
+
+function finishTimer(controller) {
+  if (!controller.running) return;
+
+  controller.remaining = 0;
+  controller.running = false;
+
+  if (controller.frame !== null) {
+    window.cancelAnimationFrame(controller.frame);
+    controller.frame = null;
+  }
+
+  cancelTimerAdvance(controller);
+  controller.progress.style.strokeDashoffset = '100';
+  controller.button.classList.remove('is-low');
+  controller.button.classList.add('is-timeout');
+  closeTimerMenu(controller);
+  controller.onTimeout(controller);
+}
+
+function selectTimerDuration(controller, seconds) {
+  if (!controller.isAvailable() || !TIMER_DURATIONS.includes(seconds)) return;
+
+  startTimer(controller, seconds);
+  controller.button.focus({ preventScroll: true });
+}
+
+function ensureTimerForQuestion(controller) {
+  syncTimerAvailability(controller);
+
+  if (!controller.isAvailable()) {
+    if (controller.running) stopTimer(controller, { deactivate: false });
+    return;
+  }
+
+  if (controller.duration > 0 && !controller.running) {
+    startTimer(controller, controller.duration);
+  }
+}
+
+function handleQuizTimeout(controller) {
+  const question = state.quiz[state.quizIndex];
+  if (!question || state.answered) return;
+
+  state.answered = true;
+  question.selected = null;
+  question.correct = false;
+  question.timedOut = true;
+  state.streak = 0;
+
+  els.quizScore.textContent = t('quiz.score', { n: state.score });
+  renderQuizStreak();
+  els.quizProgress.style.width = `${((state.quizIndex + 1) / state.quiz.length) * 100}%`;
+  paintAnswer(question);
+  syncTimerAvailability(controller);
+  scheduleTimerAdvance(controller, advanceQuizAfterTimeout);
+}
+
+function advanceQuizAfterTimeout() {
+  const question = state.quiz[state.quizIndex];
+  if (!state.answered || !question || !question.timedOut) return;
+
+  if (state.quizIndex >= state.quiz.length - 1) {
+    showQuizResult();
+    return;
+  }
+
+  state.quizIndex += 1;
+  renderQuizQuestion();
+}
+
+function handleTfTimeout(controller) {
+  const question = state.tf[state.tfIndex];
+  if (!question || state.tfAnswered) return;
+
+  state.tfAnswered = true;
+  question.selected = null;
+  question.correct = false;
+  question.timedOut = true;
+  state.tfStreak = 0;
+
+  els.tfScore.textContent = t('quiz.score', { n: state.tfScore });
+  renderTfStreak();
+  els.tfProgress.style.width = `${((state.tfIndex + 1) / state.tf.length) * 100}%`;
+  paintTfAnswer(question);
+  syncTimerAvailability(controller);
+  scheduleTimerAdvance(controller, advanceTfAfterTimeout);
+}
+
+function advanceTfAfterTimeout() {
+  const question = state.tf[state.tfIndex];
+  if (!state.tfAnswered || !question || !question.timedOut) return;
+
+  if (state.tfIndex >= state.tf.length - 1) {
+    showTfResult();
+    return;
+  }
+
+  state.tfIndex += 1;
+  renderTfQuestion();
+}
+
+/* ============================================================
    Render: keseluruhan
    ============================================================ */
 
@@ -1418,6 +1784,13 @@ function switchTab(tabName) {
   els.tabCards.classList.toggle('hidden', tabName !== 'cards');
   els.tabQuiz.classList.toggle('hidden', tabName !== 'quiz');
   els.tabTf.classList.toggle('hidden', tabName !== 'tf');
+
+  if (tabName !== 'quiz') resetTimer(quizTimer);
+  if (tabName !== 'tf') resetTimer(tfTimer);
+
+  closeAllTimerMenus();
+  if (tabName === 'quiz') syncTimerAvailability(quizTimer);
+  if (tabName === 'tf') syncTimerAvailability(tfTimer);
 }
 
 function renderWorkspace() {
@@ -1496,6 +1869,9 @@ function applyLanguage(nextLang, options = {}) {
   });
 
   disarmClear();
+
+  refreshTimerLabels(quizTimer);
+  refreshTimerLabels(tfTimer);
 
   updateCounters();
   updateStats();
@@ -1669,12 +2045,13 @@ function dateStamp() {
 
 function buildExportData() {
   const answered = state.quiz.filter(
-    (question) => question.selected !== undefined && question.selected !== null,
+    (question) => question.timedOut
+      || (question.selected !== undefined && question.selected !== null),
   ).length;
 
   return {
     app: 'AI Study Buddy',
-    version: 6.1,
+    version: 7,
     exportedAt: new Date().toISOString(),
     language: lang,
     notes: els.notes.value,
@@ -1702,6 +2079,7 @@ function buildExportData() {
       note: question.note,
       selected: question.selected ?? null,
       correct: question.correct ?? null,
+      timedOut: Boolean(question.timedOut),
     })),
     trueFalse: state.tf.map((question) => ({
       term: question.term,
@@ -1710,6 +2088,7 @@ function buildExportData() {
       correctTerm: question.correctTerm,
       selected: question.selected ?? null,
       correct: question.correct ?? null,
+      timedOut: Boolean(question.timedOut),
     })),
   };
 }
@@ -1906,6 +2285,8 @@ function startOver() {
   state.tfStreak = 0;
   state.tfAnswered = false;
 
+  resetTimer(quizTimer);
+  resetTimer(tfTimer);
   renderQuizStreak();
   renderTfStreak();
   stopConfetti();
@@ -1975,14 +2356,32 @@ els.quizOptions.addEventListener('click', (event) => {
 
 els.quizNext.addEventListener('click', nextQuestion);
 els.quizShuffle.addEventListener('click', shuffleQuiz);
+els.quizTimer.addEventListener('click', () => toggleTimerMenu(quizTimer));
+els.quizTimerOptions.forEach((option) => {
+  option.addEventListener('click', () => {
+    selectTimerDuration(quizTimer, Number(option.dataset.seconds));
+  });
+});
 
 els.tfTrue.addEventListener('click', () => selectTfAnswer(true));
 els.tfFalse.addEventListener('click', () => selectTfAnswer(false));
 els.tfNext.addEventListener('click', nextTfQuestion);
 els.tfShuffle.addEventListener('click', shuffleTf);
+els.tfTimer.addEventListener('click', () => toggleTimerMenu(tfTimer));
+els.tfTimerOptions.forEach((option) => {
+  option.addEventListener('click', () => {
+    selectTimerDuration(tfTimer, Number(option.dataset.seconds));
+  });
+});
 els.btnTfRetry.addEventListener('click', retryTf);
 els.btnTfShuffleResult.addEventListener('click', shuffleTf);
 els.btnTfNew.addEventListener('click', startOver);
+
+document.addEventListener('click', (event) => {
+  const target = event.target;
+  if (target instanceof Element && target.closest('.timer-control')) return;
+  closeAllTimerMenus();
+});
 
 els.tabButtons.forEach((button) => {
   button.addEventListener('click', () => switchTab(button.dataset.tab));
@@ -1997,6 +2396,8 @@ els.langButtons.forEach((button) => {
 
 document.addEventListener('keydown', (event) => {
   if (event.altKey || event.ctrlKey || event.metaKey) return;
+  if (event.key === 'Escape' && closeAllTimerMenus({ restoreFocus: true })) return;
+  if (isTimerMenuOpen()) return;
 
   const tag = (document.activeElement?.tagName || '').toLowerCase();
   if (['input', 'textarea', 'select'].includes(tag)) return;
