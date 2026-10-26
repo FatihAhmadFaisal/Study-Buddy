@@ -1,4 +1,4 @@
-# AI Study Buddy — v7
+# AI Study Buddy — v7.1
 
 Ubah catatan kuliah menjadi **flashcard 3D**, **kuis pilihan ganda**, dan **kuis True / False** langsung di browser. Tidak ada backend; semua pemrosesan berjalan lokal.
 
@@ -10,6 +10,7 @@ Ubah catatan kuliah menjadi **flashcard 3D**, **kuis pilihan ganda**, dan **kuis
 - **Streak & konfeti** — kuis pilihan ganda dan True / False menampilkan indikator api 🔥 saat jawaban benar beruntun mencapai 2 atau lebih. Streak kembali ke 0 saat jawaban salah, kuis direset/diacak, atau kuis selesai. Skor akhir minimal 80% memicu animasi konfeti di layar hasil.
 - **Acak kartu & kuis** — tombol shuffle mengacak urutan flashcard; pada kuis pilihan ganda, urutan soal dan opsi jawaban diacak ulang setiap kali kuis dibuat, di-shuffle, atau diulang, sementara jawaban benar tetap terlacak. Progres (skor, jawaban, indeks, streak) direset, lalu soal serta kombinasi T/F dibuat ulang.
 - **Timer kuis interaktif** — tombol ikon jam di kiri tombol Acak pada kuis pilihan ganda dan True / False membuka pilihan durasi 5, 10, 30, atau 60 detik. Cincin melingkar di sekitar ikon menyusut sesuai sisa waktu. Timer memulai ulang penuh di setiap soal; jika waktu habis, soal dianggap salah, umpan balik ditampilkan, lalu kuis otomatis lanjut ke soal berikutnya atau ke layar hasil. Tombol Acak/Ulangi dan perpindahan tab mematikan serta mereset timer, sehingga pengguna harus memilih durasi lagi untuk memulai timer baru.
+- **Validasi catatan fleksibel** — pasangan singkat seperti "DB: Basis data" dan catatan pendek tetap dapat diproses. Peringatan yang jelas muncul untuk catatan kosong, terlalu pendek, atau kurang dari dua poin yang bisa diolah.
 - **Dua bahasa (ID/EN)** — seluruh antarmuka berganti bahasa lewat toggle di header, termasuk label aksesibilitas streak, label timer, dan pesan selebrasi. Pilihan bahasa diingat.
 - **Auto-save** — catatan tersimpan otomatis di `localStorage`; saat halaman dibuka kembali, kartu dan kuis dibuat ulang otomatis.
 - **Hapus catatan** — tombol reset dua langkah untuk membersihkan catatan dan penyimpanan lokal.
@@ -44,11 +45,11 @@ Overfitting terjadi ketika model terlalu hafal data latih.
 Neural network: jaringan saraf tiruan berlapis neuron buatan.
 ```
 
-Baris tanpa titik dua otomatis menjadi kartu isian rumpang. Minimal dua poin agar kuis bisa dibuat. Kuis True / False membutuhkan minimal dua pasangan `Istilah: penjelasan`.
+Baris tanpa titik dua otomatis menjadi kartu isian rumpang. Pasangan singkat seperti `DB: Basis data` atau `Kata: Penjelasan` tetap dikenali sebagai kartu definisi. Minimal dua poin agar kuis bisa dibuat. Kuis True / False membutuhkan minimal dua pasangan `Istilah: penjelasan`.
 
 ## Penyimpanan
 
 - `ai-study-buddy.notes` — catatan terakhir (JSON `{ version, text, updatedAt }`)
 - `ai-study-buddy.lang` — preferensi bahasa (`id` atau `en`)
 
-File ekspor berisi `notes`, `cards`, `quiz`, `trueFalse`, dan `summary` (jumlah kartu/soal, jawaban terisi, skor, serta jumlah soal True / False). Setiap soal kuis menyertakan status `timedOut`; versi skema ekspor saat ini adalah `7`.
+File ekspor berisi `notes`, `cards`, `quiz`, `trueFalse`, dan `summary` (jumlah kartu/soal, jawaban terisi, skor, serta jumlah soal True / False). Setiap soal kuis menyertakan status `timedOut`; versi skema ekspor saat ini adalah `7`. Perubahan v7.1 hanya menyentuh validasi catatan, jadi skema ekspor tidak berubah.

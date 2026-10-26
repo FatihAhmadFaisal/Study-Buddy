@@ -59,6 +59,11 @@ const STORAGE_KEY = 'ai-study-buddy.lang';
 const NOTES_KEY = 'ai-study-buddy.notes';
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 
+// Validasi catatan memakai jumlah huruf/angka, bukan jumlah kata, agar
+// pasangan singkat seperti "DB: Basis data" tetap bisa diolah.
+const MIN_NOTE_MEANINGFUL_CHARS = 10;
+const MIN_CARD_TEXT_CHARS = 10;
+
 const TRANSLATIONS = {
   id: {
     'app.title': 'AI Study Buddy — Catatan Jadi Flashcard & Kuis',
@@ -182,8 +187,8 @@ const TRANSLATIONS = {
     'result.lowText': 'Baca ulang poin yang masih sulit, lalu ulangi kuisnya.',
 
     'hint.empty': 'Catatan masih kosong. Tempel catatan kuliahmu dulu, ya.',
-    'hint.short': 'Catatan terlalu pendek. Tambahkan beberapa poin agar materi bisa disusun.',
-    'hint.fewCards': 'Belum cukup poin yang bisa diolah. Tulis minimal 2 baris, misalnya dengan format "Istilah: penjelasan".',
+    'hint.short': 'Catatan terlalu pendek. Tambahkan penjelasan pada minimal dua poin, misalnya "Istilah: penjelasan".',
+    'hint.fewCards': 'Belum cukup poin yang bisa diolah. Pastikan ada minimal dua poin, misalnya dua baris "Istilah: penjelasan".',
     'hint.error': 'Terjadi kesalahan saat menyusun materi. Silakan coba lagi.',
   },
 
@@ -309,8 +314,8 @@ const TRANSLATIONS = {
     'result.lowText': 'Re-read the points you found hard, then retry the quiz.',
 
     'hint.empty': 'Your notes are still empty. Paste your lecture notes first.',
-    'hint.short': 'These notes are too short. Add a few more points so the material can be built.',
-    'hint.fewCards': 'Not enough usable points yet. Write at least 2 lines, for example in the "Term: explanation" format.',
+    'hint.short': 'Your notes are too short. Add explanations to at least two points, for example "Term: explanation".',
+    'hint.fewCards': 'Not enough usable points yet. Make sure there are at least two points, for example two "Term: explanation" lines.',
     'hint.error': 'Something went wrong while preparing your material. Please try again.',
   },
 };
@@ -552,7 +557,8 @@ function cleanTerm(value) {
 }
 
 function detectPair(text) {
-  const withSeparator = text.match(/^(.{2,70}?)\s*(?::|—|–|\s-\s|\s=\s|\s→\s)\s*(.{15,})$/);
+  // Pasangan eksplisit boleh memakai penjelasan pendek, misalnya "DB: Basis data".
+  const withSeparator = text.match(/^(.{2,70}?)\s*(?::|—|–|\s-\s|\s=\s|\s→\s)\s*(.{3,})$/);
   if (withSeparator) {
     const term = cleanTerm(withSeparator[1]);
     if (term) return { term, definition: capitalize(withSeparator[2].trim()) };
@@ -596,7 +602,7 @@ function buildCards(segments) {
 
   segments.forEach((segment) => {
     const text = segment.replace(/\s+/g, ' ').trim();
-    if (text.length < 12) return;
+    if (text.length < MIN_CARD_TEXT_CHARS) return;
 
     const pair = detectPair(text);
     if (pair) {
@@ -2189,6 +2195,10 @@ function handleClearClick() {
   startOver();
 }
 
+function countMeaningfulChars(text) {
+  return String(text ?? '').replace(/[^\p{L}\p{N}]+/gu, '').length;
+}
+
 function generate() {
   if (state.loading) return false;
   disarmClear();
@@ -2202,7 +2212,7 @@ function generate() {
     return false;
   }
 
-  if (raw.split(/\s+/).length < 8) {
+  if (countMeaningfulChars(raw) < MIN_NOTE_MEANINGFUL_CHARS) {
     showHint(t('hint.short'));
     els.notes.focus();
     return false;
