@@ -4,9 +4,10 @@
    AI Study Buddy
    ------------------------------------------------------------
    Alur kerja:
-   1. Catatan dipecah menjadi kalimat / poin.
-   2. Setiap poin dianalisis menjadi kartu (definisi atau rumpang).
-   3. Kartu dipakai untuk menyusun kuis pilihan ganda.
+   1. Materi diambil dari mode input yang aktif saja: catatan
+      tempel bebas atau formulir soal terstruktur.
+   2. Setiap poin / baris dianalisis menjadi kartu.
+   3. Kartu dipakai untuk menyusun kuis pilihan ganda dan T/F.
    Semua proses berjalan lokal di browser.
    ============================================================ */
 
@@ -51,6 +52,92 @@ Gradient descent is an optimization algorithm that updates model weights toward 
 Cross-validation is an evaluation method that splits data into several folds.
 Confusion matrix: a table summarizing classification performance from correct and incorrect predictions.`;
 
+const SAMPLE_STRUCTURED = [
+  {
+    term: 'Machine Learning',
+    explanation: 'Cabang kecerdasan buatan yang memungkinkan sistem belajar dari data tanpa diprogram secara eksplisit.',
+  },
+  {
+    term: 'Supervised learning',
+    explanation: 'Model dilatih memakai data berlabel untuk memprediksi hasil baru.',
+  },
+  {
+    term: 'Unsupervised learning',
+    explanation: 'Model menemukan pola tersembunyi pada data tanpa label.',
+  },
+  {
+    term: 'Overfitting',
+    explanation: 'Model terlalu hafal data latih sehingga performanya buruk pada data baru.',
+  },
+  {
+    term: 'Regularisasi',
+    explanation: 'Teknik mengurangi overfitting dengan memberi penalti pada model yang terlalu kompleks.',
+  },
+  {
+    term: 'Neural network',
+    explanation: 'Jaringan saraf tiruan yang tersusun dari lapisan neuron buatan.',
+  },
+  {
+    term: 'Fungsi aktivasi ReLU',
+    explanation: 'Membantu jaringan saraf mempelajari hubungan non-linear.',
+  },
+  {
+    term: 'Gradient descent',
+    explanation: 'Algoritma optimasi yang memperbarui bobot model ke arah penurunan error.',
+  },
+  {
+    term: 'Cross-validation',
+    explanation: 'Metode evaluasi model dengan membagi data menjadi beberapa lipatan.',
+  },
+  {
+    term: 'Confusion matrix',
+    explanation: 'Tabel yang merangkum performa klasifikasi berdasarkan prediksi benar dan salah.',
+  },
+];
+
+const SAMPLE_STRUCTURED_EN = [
+  {
+    term: 'Machine Learning',
+    explanation: 'A branch of artificial intelligence that lets systems learn from data without explicit programming.',
+  },
+  {
+    term: 'Supervised learning',
+    explanation: 'A model is trained on labeled data to predict new outcomes.',
+  },
+  {
+    term: 'Unsupervised learning',
+    explanation: 'A model finds hidden patterns in unlabeled data.',
+  },
+  {
+    term: 'Overfitting',
+    explanation: 'A model memorizes the training data, hurting performance on new data.',
+  },
+  {
+    term: 'Regularization',
+    explanation: 'A technique that reduces overfitting by penalizing overly complex models.',
+  },
+  {
+    term: 'Neural network',
+    explanation: 'An artificial network built from layers of artificial neurons.',
+  },
+  {
+    term: 'ReLU activation',
+    explanation: 'Helps neural networks learn non-linear relationships.',
+  },
+  {
+    term: 'Gradient descent',
+    explanation: 'An optimization algorithm that updates model weights toward lower error.',
+  },
+  {
+    term: 'Cross-validation',
+    explanation: 'An evaluation method that splits data into several folds.',
+  },
+  {
+    term: 'Confusion matrix',
+    explanation: 'A table summarizing classification performance from correct and incorrect predictions.',
+  },
+];
+
 /* ============================================================
    Kamus bahasa (ID / EN)
    ============================================================ */
@@ -58,6 +145,10 @@ Confusion matrix: a table summarizing classification performance from correct an
 const STORAGE_KEY = 'ai-study-buddy.lang';
 const NOTES_KEY = 'ai-study-buddy.notes';
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+const STORAGE_VERSION = 4;
+const EXPORT_VERSION = 8;
+const MAX_STRUCTURED_ROWS = 100;
+const MIN_STRUCTURED_ROWS = 2;
 
 // Validasi catatan memakai jumlah huruf/angka, bukan jumlah kata, agar
 // pasangan singkat seperti "DB: Basis data" tetap bisa diolah.
@@ -74,7 +165,7 @@ const TRANSLATIONS = {
     'stats.cards': '{n} kartu',
     'stats.questions': '{n} soal',
 
-    'input.title': '1. Tempel catatanmu',
+    'input.title': '1. Masukkan materimu',
     'input.sample': 'Pakai contoh',
     'input.desc': 'Satu poin per baris, atau tulis bebas. Kami akan memecah dan menyusunnya otomatis.',
     'input.label': 'Catatan kuliah',
@@ -84,13 +175,39 @@ const TRANSLATIONS = {
     'input.generate': 'Buat Flashcard & Kuis',
     'input.loading': 'Menyusun materi…',
 
+    'mode.aria': 'Mode input materi',
+    'mode.paste': 'Tempel Teks',
+    'mode.structured': 'Formulir Soal',
+
+    'structured.desc': 'Isi satu istilah dan penjelasannya per baris. Setiap baris lengkap menjadi satu kartu.',
+    'structured.add': 'Tambahkan Soal',
+    'structured.rowsAria': 'Daftar soal terstruktur',
+    'structured.empty': 'Belum ada soal. Klik “Tambahkan Soal” untuk mulai.',
+    'structured.rowLabel': 'Soal {n}',
+    'structured.term': 'Term / Istilah / Pertanyaan',
+    'structured.termPlaceholder': 'Contoh: Overfitting, atau Apa itu overfitting?',
+    'structured.explanation': 'Explanation / Penjelasan / Jawaban',
+    'structured.explanationPlaceholder': 'Contoh: Model terlalu hafal data latih sehingga buruk pada data baru.',
+    'structured.remove': 'Hapus soal {n}',
+    'structured.count': '{complete} dari {total} soal lengkap',
+    'structured.errorMin': 'Isi minimal dua baris lengkap: istilah dan penjelasan.',
+    'structured.errorIncomplete': 'Soal {n} belum lengkap. Isi istilah dan penjelasannya, atau kosongkan baris itu.',
+    'structured.errorDuplicateTerm': 'Istilah “{term}” dipakai lebih dari sekali. Gunakan istilah yang unik.',
+    'structured.errorDuplicateExplanation': 'Penjelasan untuk “{term}” sama dengan baris lain. Buat penjelasan yang berbeda.',
+    'structured.errorEmpty': 'Formulir masih kosong. Tambahkan minimal dua soal lengkap, ya.',
+    'structured.errorMax': 'Maksimal {n} soal dalam satu formulir.',
+
     'tips.title': 'Tips agar hasilnya bagus',
     'tips.one': 'Gunakan format <code class="code-chip">Istilah: penjelasan</code> untuk kartu definisi.',
     'tips.two': 'Baris tanpa titik dua akan diubah menjadi kartu isian rumpang.',
     'tips.three': 'Minimal 2 poin agar kuis bisa dibuat.',
     'tips.four': 'Catatan tersimpan otomatis di browser ini.',
+    'structured.tips.one': 'Setiap baris lengkap menjadi <strong>kartu definisi</strong>, soal MCQ, dan pernyataan T/F.',
+    'structured.tips.two': 'Isi minimal <strong>dua baris lengkap</strong>: istilah dan penjelasan.',
+    'structured.tips.three': 'Gunakan istilah dan penjelasan yang unik agar pilihan jawaban tidak rancu.',
+    'structured.tips.four': 'Data formulir tersimpan otomatis di browser ini.',
 
-    'storage.clear': 'Hapus catatan',
+    'storage.clear': 'Hapus semua',
     'storage.clearConfirm': 'Yakin? Klik lagi',
     'storage.saved': 'Tersimpan',
     'storage.export': 'Simpan File',
@@ -104,7 +221,7 @@ const TRANSLATIONS = {
     'storage.readError': 'Gagal membaca file. Silakan coba lagi.',
 
     'empty.title': 'Materi belajarmu muncul di sini',
-    'empty.desc': 'Tempel catatan kuliahmu, lalu tekan <span class="font-semibold text-slate-700">Buat Flashcard &amp; Kuis</span>.',
+    'empty.desc': 'Tempel catatan atau isi formulir soal, lalu tekan <span class="font-semibold text-slate-700">Buat Flashcard &amp; Kuis</span>.',
     'empty.f1': '<strong class="font-semibold text-slate-700">Flashcard 3D.</strong> Klik kartu untuk membalik.',
     'empty.f2': '<strong class="font-semibold text-slate-700">Kuis pilihan ganda.</strong> Lengkap dengan pembahasan.',
     'empty.f3': '<strong class="font-semibold text-slate-700">Skor otomatis.</strong> Pantau hasil belajarmu.',
@@ -118,6 +235,7 @@ const TRANSLATIONS = {
     'card.counter': 'Kartu {i} / {n}',
     'card.clickToFlip': 'Klik kartu untuk membalik',
     'card.questionBadge': 'Pertanyaan',
+    'card.termBadge': 'Istilah',
     'card.clozeBadge': 'Isian rumpang',
     'card.answerBadge': 'Jawaban',
     'card.reveal': 'Klik untuk melihat jawaban',
@@ -201,7 +319,7 @@ const TRANSLATIONS = {
     'stats.cards': '{n} cards',
     'stats.questions': '{n} questions',
 
-    'input.title': '1. Paste your notes',
+    'input.title': '1. Add your material',
     'input.sample': 'Use sample',
     'input.desc': "One point per line, or write freely. We'll split and organize it for you.",
     'input.label': 'Lecture notes',
@@ -211,13 +329,39 @@ const TRANSLATIONS = {
     'input.generate': 'Create Flashcards & Quiz',
     'input.loading': 'Preparing material…',
 
+    'mode.aria': 'Input mode',
+    'mode.paste': 'Paste Text',
+    'mode.structured': 'Question Form',
+
+    'structured.desc': 'Fill in one term and its explanation per row. Each complete row becomes one card.',
+    'structured.add': 'Add Question',
+    'structured.rowsAria': 'Structured question list',
+    'structured.empty': 'No questions yet. Click “Add Question” to start.',
+    'structured.rowLabel': 'Question {n}',
+    'structured.term': 'Term / Question',
+    'structured.termPlaceholder': 'Example: Overfitting, or What is overfitting?',
+    'structured.explanation': 'Explanation / Answer',
+    'structured.explanationPlaceholder': 'Example: A model memorizes the training data, hurting performance on new data.',
+    'structured.remove': 'Remove question {n}',
+    'structured.count': '{complete} of {total} complete',
+    'structured.errorMin': 'Add at least two complete rows: a term and an explanation.',
+    'structured.errorIncomplete': 'Question {n} is incomplete. Fill in both the term and explanation, or clear that row.',
+    'structured.errorDuplicateTerm': 'The term “{term}” is used more than once. Use unique terms.',
+    'structured.errorDuplicateExplanation': 'The explanation for “{term}” matches another row. Make it different.',
+    'structured.errorEmpty': 'The form is still empty. Add at least two complete questions.',
+    'structured.errorMax': 'A form can contain at most {n} questions.',
+
     'tips.title': 'Tips for better results',
     'tips.one': 'Use the format <code class="code-chip">Term: explanation</code> for definition cards.',
     'tips.two': 'Lines without a colon become fill-in-the-blank cards.',
     'tips.three': 'At least 2 points are needed to build a quiz.',
     'tips.four': 'Your notes are saved automatically in this browser.',
+    'structured.tips.one': 'Each complete row becomes a <strong>definition card</strong>, MCQ, and T/F statement.',
+    'structured.tips.two': 'Add at least <strong>two complete rows</strong>: term and explanation.',
+    'structured.tips.three': 'Use unique terms and explanations so answer choices stay clear.',
+    'structured.tips.four': 'Your form data is saved automatically in this browser.',
 
-    'storage.clear': 'Clear notes',
+    'storage.clear': 'Clear all',
     'storage.clearConfirm': 'Sure? Click again',
     'storage.saved': 'Saved',
     'storage.export': 'Save File',
@@ -231,7 +375,7 @@ const TRANSLATIONS = {
     'storage.readError': "Couldn't read that file. Please try again.",
 
     'empty.title': 'Your study material appears here',
-    'empty.desc': 'Paste your lecture notes, then press <span class="font-semibold text-slate-700">Create Flashcards &amp; Quiz</span>.',
+    'empty.desc': 'Paste your notes or fill in the question form, then press <span class="font-semibold text-slate-700">Create Flashcards &amp; Quiz</span>.',
     'empty.f1': '<strong class="font-semibold text-slate-700">3D flashcards.</strong> Click a card to flip it.',
     'empty.f2': '<strong class="font-semibold text-slate-700">Multiple-choice quiz.</strong> Complete with explanations.',
     'empty.f3': '<strong class="font-semibold text-slate-700">Automatic scoring.</strong> See how well you did.',
@@ -245,6 +389,7 @@ const TRANSLATIONS = {
     'card.counter': 'Card {i} / {n}',
     'card.clickToFlip': 'Click the card to flip',
     'card.questionBadge': 'Question',
+    'card.termBadge': 'Term',
     'card.clozeBadge': 'Fill in the blank',
     'card.answerBadge': 'Answer',
     'card.reveal': 'Click to reveal the answer',
@@ -358,9 +503,12 @@ const state = {
   tfStreak: 0,
   tfAnswered: false,
   loading: false,
+  inputMode: 'paste',
+  structuredRows: [],
 };
 
 let generateTimer = null;
+let structuredRowSeed = 0;
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -374,6 +522,17 @@ const els = {
   generateIcon: $('#generate-icon'),
   generateSpinner: $('#generate-spinner'),
   formHint: $('#form-hint'),
+
+  modeButtons: Array.from(document.querySelectorAll('.mode-tab')),
+  pastePanel: $('#paste-panel'),
+  structuredPanel: $('#structured-panel'),
+  pasteCounts: $('#paste-counts'),
+  structuredCount: $('#structured-count'),
+  structuredRows: $('#structured-rows'),
+  structuredEmpty: $('#structured-empty'),
+  btnAddRow: $('#btn-add-row'),
+  tipsPaste: $('#tips-paste'),
+  tipsStructured: $('#tips-structured'),
 
   btnClear: $('#btn-clear'),
   clearLabel: $('#clear-label'),
@@ -611,6 +770,7 @@ function buildCards(segments) {
         term: pair.term,
         definition: pair.definition,
         source: text,
+        sourceMode: 'paste',
       });
       return;
     }
@@ -629,6 +789,7 @@ function buildCards(segments) {
       definition: text,
       source: text,
       cloze,
+      sourceMode: 'paste',
     });
   });
 
@@ -636,43 +797,400 @@ function buildCards(segments) {
 }
 
 /* ============================================================
-   Penyusunan kuis
+   Formulir soal terstruktur
    ============================================================ */
 
-function makeQuestion(card, cards) {
-  const others = cards.filter((item) => item !== card);
-  const otherTerms = uniqueBy(
-    others.map((item) => item.term),
-    (term) => term,
-  ).filter((term) => term.toLowerCase() !== card.term.toLowerCase());
+function cleanStructuredValue(value) {
+  return String(value ?? '').replace(/\s+/g, ' ').trim();
+}
 
-  const otherDefinitions = uniqueBy(
-    others.filter((item) => item.kind === 'definition').map((item) => item.definition),
-    (definition) => definition,
-  ).filter((definition) => definition.toLowerCase() !== card.definition.toLowerCase());
+function createStructuredRow(term = '', explanation = '') {
+  structuredRowSeed += 1;
+  return {
+    id: `srow-${structuredRowSeed}`,
+    term: String(term ?? ''),
+    explanation: String(explanation ?? ''),
+  };
+}
 
-  const sourceLower = card.source.toLowerCase();
-  const termLower = card.term.toLowerCase();
-  const termIndex = sourceLower.indexOf(termLower);
-  const canCloze = termIndex >= 0 && otherTerms.length >= 1;
-  const canMatch = card.kind === 'definition' && otherDefinitions.length >= 1;
+function createEmptyStructuredRows(count = MIN_STRUCTURED_ROWS) {
+  return Array.from({ length: count }, () => createStructuredRow());
+}
 
-  if (canCloze && (!canMatch || Math.random() < 0.5)) {
-    const blanked = `${card.source.slice(0, termIndex)}[____]${card.source.slice(termIndex + card.term.length)}`;
-    const options = shuffleArray([card.term, ...shuffleArray(otherTerms).slice(0, 3)]);
+/** Terima data dari localStorage / impor dan buang entri yang bukan objek. */
+function normalizeStructuredRows(rows) {
+  if (!Array.isArray(rows)) return null;
 
+  return rows
+    .slice(0, MAX_STRUCTURED_ROWS)
+    .filter((row) => row && typeof row === 'object')
+    .map((row) => createStructuredRow(
+      typeof row.term === 'string' ? row.term : '',
+      typeof row.explanation === 'string'
+        ? row.explanation
+        : typeof row.definition === 'string'
+          ? row.definition
+          : '',
+    ));
+}
+
+function autoGrowTextarea(field) {
+  if (!field) return;
+  field.style.height = 'auto';
+  field.style.height = `${Math.max(field.scrollHeight, 44)}px`;
+}
+
+function autoGrowStructuredRows() {
+  els.structuredRows.querySelectorAll('.structured-input').forEach(autoGrowTextarea);
+}
+
+function focusStructuredCell(rowId, field = 'term') {
+  const rowEl = Array.from(els.structuredRows.children)
+    .find((element) => element.dataset.rowId === rowId);
+  if (!rowEl) return;
+
+  const fieldEl = rowEl.querySelector(`[data-field="${field}"]`);
+  if (fieldEl) fieldEl.focus();
+}
+
+function renderStructuredRows({ focusRowId = null, focusField = 'term' } = {}) {
+  const rows = state.structuredRows;
+
+  els.structuredRows.innerHTML = rows
+    .map((row, index) => {
+      const termId = `structured-term-${row.id}`;
+      const explanationId = `structured-explanation-${row.id}`;
+      const rowLabel = t('structured.rowLabel', { n: index + 1 });
+      const removeLabel = t('structured.remove', { n: index + 1 });
+      const disabled = state.loading ? ' disabled' : '';
+
+      return `
+        <article class="structured-row" data-row-id="${row.id}" aria-labelledby="structured-label-${row.id}">
+          <div class="structured-row-head">
+            <span id="structured-label-${row.id}" class="structured-row-number">${escapeHtml(rowLabel)}</span>
+            <button
+              type="button"
+              class="row-remove"
+              data-remove-row="${row.id}"
+              aria-label="${escapeHtml(removeLabel)}"
+              title="${escapeHtml(removeLabel)}"${disabled}
+            >
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M10 11v6M14 11v6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+          <div class="structured-field">
+            <label class="structured-label" for="${termId}">${escapeHtml(t('structured.term'))}</label>
+            <textarea
+              id="${termId}"
+              class="structured-input"
+              data-field="term"
+              rows="2"
+              spellcheck="false"
+              aria-label="${escapeHtml(t('structured.term'))}"
+              placeholder="${escapeHtml(t('structured.termPlaceholder'))}"${disabled}
+            >${escapeHtml(row.term)}</textarea>
+          </div>
+          <div class="structured-field">
+            <label class="structured-label" for="${explanationId}">${escapeHtml(t('structured.explanation'))}</label>
+            <textarea
+              id="${explanationId}"
+              class="structured-input"
+              data-field="explanation"
+              rows="3"
+              spellcheck="false"
+              aria-label="${escapeHtml(t('structured.explanation'))}"
+              placeholder="${escapeHtml(t('structured.explanationPlaceholder'))}"${disabled}
+            >${escapeHtml(row.explanation)}</textarea>
+          </div>
+        </article>`;
+    })
+    .join('');
+
+  els.structuredEmpty.classList.toggle('hidden', rows.length > 0);
+  els.btnAddRow.disabled = state.loading;
+
+  window.requestAnimationFrame(() => {
+    autoGrowStructuredRows();
+    if (focusRowId) focusStructuredCell(focusRowId, focusField);
+  });
+}
+
+function clearStructuredErrors() {
+  els.structuredRows.querySelectorAll('.structured-row').forEach((rowEl) => {
+    rowEl.classList.remove('has-error');
+    rowEl.querySelectorAll('[data-field]').forEach((field) => {
+      field.removeAttribute('aria-invalid');
+    });
+  });
+}
+
+function setStructuredRowErrors(rowIds) {
+  const flagged = new Set(rowIds);
+
+  els.structuredRows.querySelectorAll('.structured-row').forEach((rowEl) => {
+    const hasError = flagged.has(rowEl.dataset.rowId);
+    rowEl.classList.toggle('has-error', hasError);
+    rowEl.querySelectorAll('[data-field]').forEach((field) => {
+      if (hasError) field.setAttribute('aria-invalid', 'true');
+      else field.removeAttribute('aria-invalid');
+    });
+  });
+}
+
+function countCompleteStructuredRows() {
+  return state.structuredRows.filter(
+    (row) => cleanStructuredValue(row.term) && cleanStructuredValue(row.explanation),
+  ).length;
+}
+
+function hasInputData() {
+  return els.notes.value.trim().length > 0
+    || state.structuredRows.some(
+      (row) => cleanStructuredValue(row.term) || cleanStructuredValue(row.explanation),
+    );
+}
+
+function buildStructuredCards() {
+  const cards = state.structuredRows
+    .map((row) => ({
+      term: cleanStructuredValue(row.term),
+      definition: cleanStructuredValue(row.explanation),
+    }))
+    .filter((row) => row.term && row.definition)
+    .map((row) => ({
+      kind: 'definition',
+      term: row.term,
+      definition: row.definition,
+      source: `${row.term}: ${row.definition}`,
+      sourceMode: 'structured',
+    }));
+
+  return uniqueBy(uniqueBy(cards, (card) => card.term), (card) => card.definition);
+}
+
+/**
+ * Validasi mode formulir:
+ * - baris kosong diabaikan,
+ * - baris yang hanya terisi separuh dianggap belum lengkap,
+ * - minimal dua baris lengkap,
+ * - istilah dan penjelasan harus unik.
+ */
+function validateStructuredRows() {
+  clearStructuredErrors();
+
+  const rows = state.structuredRows;
+  const cleaned = rows.map((row, index) => ({
+    row,
+    index,
+    term: cleanStructuredValue(row.term),
+    explanation: cleanStructuredValue(row.explanation),
+  }));
+  const meaningful = cleaned.filter((entry) => entry.term || entry.explanation);
+
+  if (meaningful.length === 0) {
     return {
-      type: 'cloze',
-      term: card.term,
-      context: `“${blanked}”`,
-      options,
-      answerIndex: options.indexOf(card.term),
-      note: card.source,
+      ok: false,
+      hint: t('structured.errorEmpty'),
+      focus: rows[0] ? { id: rows[0].id, field: 'term' } : null,
     };
   }
 
+  const incomplete = meaningful.find((entry) => !entry.term || !entry.explanation);
+  if (incomplete) {
+    setStructuredRowErrors([incomplete.row.id]);
+    return {
+      ok: false,
+      hint: t('structured.errorIncomplete', { n: incomplete.index + 1 }),
+      focus: {
+        id: incomplete.row.id,
+        field: incomplete.term ? 'explanation' : 'term',
+      },
+    };
+  }
+
+  const complete = meaningful;
+
+  if (complete.length < MIN_STRUCTURED_ROWS) {
+    return {
+      ok: false,
+      hint: t('structured.errorMin'),
+      focus: { id: complete[0].row.id, field: 'term' },
+    };
+  }
+
+  const seenTerms = new Map();
+  for (const entry of complete) {
+    const key = entry.term.toLowerCase();
+    if (seenTerms.has(key)) {
+      const first = seenTerms.get(key);
+      setStructuredRowErrors([first.row.id, entry.row.id]);
+      return {
+        ok: false,
+        hint: t('structured.errorDuplicateTerm', { term: entry.term }),
+        focus: { id: entry.row.id, field: 'term' },
+      };
+    }
+    seenTerms.set(key, entry);
+  }
+
+  const seenExplanations = new Map();
+  for (const entry of complete) {
+    const key = entry.explanation.toLowerCase();
+    if (seenExplanations.has(key)) {
+      const first = seenExplanations.get(key);
+      setStructuredRowErrors([first.row.id, entry.row.id]);
+      return {
+        ok: false,
+        hint: t('structured.errorDuplicateExplanation', { term: entry.term }),
+        focus: { id: entry.row.id, field: 'explanation' },
+      };
+    }
+    seenExplanations.set(key, entry);
+  }
+
+  return {
+    ok: true,
+    cards: complete.map((entry) => ({
+      kind: 'definition',
+      term: entry.term,
+      definition: entry.explanation,
+      source: `${entry.term}: ${entry.explanation}`,
+      sourceMode: 'structured',
+    })),
+  };
+}
+
+function addStructuredRow() {
+  if (state.loading) return;
+
+  if (state.structuredRows.length >= MAX_STRUCTURED_ROWS) {
+    showHint(t('structured.errorMax', { n: MAX_STRUCTURED_ROWS }));
+    return;
+  }
+
+  const row = createStructuredRow();
+  state.structuredRows.push(row);
+  clearHint();
+  renderStructuredRows({ focusRowId: row.id });
+  updateCounters();
+  saveNotes();
+  flashSaveStatus();
+}
+
+function removeStructuredRow(rowId) {
+  if (state.loading) return;
+
+  const index = state.structuredRows.findIndex((row) => row.id === rowId);
+  if (index < 0) return;
+
+  state.structuredRows.splice(index, 1);
+  clearStructuredErrors();
+  clearHint();
+  renderStructuredRows();
+  updateCounters();
+  saveNotes();
+  flashSaveStatus();
+  els.btnAddRow.focus({ preventScroll: true });
+}
+
+function togglePanel(panel, active) {
+  panel.hidden = !active;
+  panel.classList.toggle('hidden', !active);
+  panel.setAttribute('aria-hidden', String(!active));
+}
+
+function setInputMode(mode, { persist = true, focus = false } = {}) {
+  const next = mode === 'structured' ? 'structured' : 'paste';
+  state.inputMode = next;
+  clearHint();
+
+  els.modeButtons.forEach((button) => {
+    const active = button.dataset.inputMode === next;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-selected', String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+
+  togglePanel(els.pastePanel, next === 'paste');
+  togglePanel(els.structuredPanel, next === 'structured');
+  els.tipsPaste.classList.toggle('hidden', next !== 'paste');
+  els.tipsStructured.classList.toggle('hidden', next !== 'structured');
+
+  updateCounters();
+
+  if (next === 'structured') {
+    window.requestAnimationFrame(autoGrowStructuredRows);
+  }
+
+  if (persist) saveNotes();
+  if (focus) focusActiveInput();
+}
+
+function focusActiveInput() {
+  if (state.inputMode === 'structured') {
+    const first = state.structuredRows[0];
+    if (first) focusStructuredCell(first.id, 'term');
+    else els.btnAddRow.focus();
+    return;
+  }
+
+  els.notes.focus();
+}
+
+/* ============================================================
+   Penyusunan kuis
+   ============================================================ */
+
+/**
+ * Ambil maksimal empat opsi berurutan dari pool asli. Blok empat baris dipakai
+ * agar posisi jawaban benar tetap bervariasi tanpa pengacakan.
+ */
+function buildOptionWindow(pool, correctValue) {
+  let correctIndex = pool.indexOf(correctValue);
+  if (correctIndex < 0) {
+    const lower = correctValue.toLowerCase();
+    correctIndex = pool.findIndex((value) => value.toLowerCase() === lower);
+  }
+
+  if (correctIndex < 0) {
+    return { options: [correctValue], answerIndex: 0 };
+  }
+
+  const windowSize = 4;
+  const blockStart = Math.min(
+    Math.floor(correctIndex / windowSize) * windowSize,
+    Math.max(0, pool.length - windowSize),
+  );
+
+  return {
+    options: pool.slice(blockStart, blockStart + windowSize),
+    answerIndex: correctIndex - blockStart,
+  };
+}
+
+function makeQuestion(card, cards) {
+  const termPool = uniqueBy(
+    cards.map((item) => item.term),
+    (term) => term,
+  );
+
+  const definitionPool = uniqueBy(
+    cards.filter((item) => item.kind === 'definition').map((item) => item.definition),
+    (definition) => definition,
+  );
+
+  const sourceLower = card.source.toLowerCase();
+  const termIndex = sourceLower.indexOf(card.term.toLowerCase());
+  const canCloze = card.sourceMode !== 'structured'
+    && termIndex >= 0
+    && termPool.length >= 2;
+  const canMatch = card.kind === 'definition' && definitionPool.length >= 2;
+
+  // Kartu definisi memakai pasangan istilah–penjelasan; kartu konsep memakai cloze.
   if (canMatch) {
-    const options = shuffleArray([card.definition, ...shuffleArray(otherDefinitions).slice(0, 3)]);
+    const { options, answerIndex } = buildOptionWindow(definitionPool, card.definition);
 
     return {
       type: 'match',
@@ -680,8 +1198,22 @@ function makeQuestion(card, cards) {
       definition: card.definition,
       context: null,
       options,
-      answerIndex: options.indexOf(card.definition),
+      answerIndex,
       note: card.definition,
+    };
+  }
+
+  if (canCloze) {
+    const blanked = `${card.source.slice(0, termIndex)}[____]${card.source.slice(termIndex + card.term.length)}`;
+    const { options, answerIndex } = buildOptionWindow(termPool, card.term);
+
+    return {
+      type: 'cloze',
+      term: card.term,
+      context: `“${blanked}”`,
+      options,
+      answerIndex,
+      note: card.source,
     };
   }
 
@@ -703,12 +1235,13 @@ function questionExplanation(question) {
 function buildQuiz(cards) {
   const questions = [];
 
-  shuffleArray(cards).forEach((card) => {
+  // Satu soal per kartu, tanpa batas jumlah dan tanpa pengacakan otomatis.
+  cards.forEach((card) => {
     const question = makeQuestion(card, cards);
     if (question) questions.push(question);
   });
 
-  return shuffleArray(questions).slice(0, 8);
+  return questions;
 }
 
 /**
@@ -742,26 +1275,33 @@ function shuffleQuizOptions() {
 /**
  * Susun pernyataan dari pasangan definisi (Istilah: penjelasan).
  *
- * - 3 pasangan atau lebih: minimal 2 pernyataan TRUE, sisanya acak.
- * - Kurang dari 3 pasangan: kombinasi TRUE/FALSE murni acak.
+ * Secara bawaan urutan pernyataan mengikuti urutan input dan pola benar/salah
+ * dibuat bergantian secara deterministik. Opsi `{ randomize: true }` hanya
+ * dipakai oleh tombol Acak untuk mengacak kombinasi dan urutan pernyataan.
  */
-function buildTrueFalseQuestions(cards) {
+function buildTrueFalseQuestions(cards, { randomize = false } = {}) {
   const pairs = cards.filter((card) => card.kind === 'definition');
   if (pairs.length < 2) return [];
 
-  const wantsTrue = pairs.map(() => Math.random() < 0.5);
+  let flags;
 
-  if (pairs.length >= 3) {
-    let trueCount = wantsTrue.filter(Boolean).length;
-    for (let i = 0; trueCount < 2 && i < wantsTrue.length; i += 1) {
-      if (!wantsTrue[i]) {
-        wantsTrue[i] = true;
-        trueCount += 1;
+  if (randomize) {
+    const wantsTrue = pairs.map(() => Math.random() < 0.5);
+
+    if (pairs.length >= 3) {
+      let trueCount = wantsTrue.filter(Boolean).length;
+      for (let i = 0; trueCount < 2 && i < wantsTrue.length; i += 1) {
+        if (!wantsTrue[i]) {
+          wantsTrue[i] = true;
+          trueCount += 1;
+        }
       }
     }
-  }
 
-  const flags = shuffleArray(wantsTrue);
+    flags = shuffleArray(wantsTrue);
+  } else {
+    flags = pairs.map((_, index) => index % 2 === 0);
+  }
 
   const questions = pairs.map((pair, index) => {
     if (flags[index]) {
@@ -792,7 +1332,9 @@ function buildTrueFalseQuestions(cards) {
       };
     }
 
-    const other = others[Math.floor(Math.random() * others.length)];
+    const other = randomize
+      ? others[Math.floor(Math.random() * others.length)]
+      : others[0];
 
     return {
       term: pair.term,
@@ -804,7 +1346,7 @@ function buildTrueFalseQuestions(cards) {
     };
   });
 
-  return shuffleArray(questions);
+  return randomize ? shuffleArray(questions) : questions;
 }
 
 /* ============================================================
@@ -820,13 +1362,21 @@ function renderCard(options = {}) {
 
   els.cardCounter.textContent = t('card.counter', { i: state.cardIndex + 1, n: state.cards.length });
   els.cardProgress.style.width = `${((state.cardIndex + 1) / state.cards.length) * 100}%`;
-  els.cardBadge.textContent = card.kind === 'definition' ? t('card.questionBadge') : t('card.clozeBadge');
+  const isStructured = card.sourceMode === 'structured';
+  els.cardBadge.textContent = isStructured
+    ? t('card.termBadge')
+    : card.kind === 'definition'
+      ? t('card.questionBadge')
+      : t('card.clozeBadge');
   els.cardNumber.textContent = String(state.cardIndex + 1);
   els.cardNumberBack.textContent = String(state.cardIndex + 1);
 
-  const frontText = card.kind === 'definition'
-    ? t('card.question', { term: card.term })
-    : `“${card.cloze}”`;
+  let frontText;
+  if (card.kind === 'definition') {
+    frontText = isStructured ? card.term : t('card.question', { term: card.term });
+  } else {
+    frontText = `“${card.cloze}”`;
+  }
 
   els.cardFront.className = card.kind === 'definition'
     ? 'card-content card-content--question'
@@ -1069,7 +1619,6 @@ function resetQuiz() {
     question.timedOut = false;
   });
   resetTimer(quizTimer);
-  shuffleQuizOptions();
 
   renderQuizStreak();
   stopConfetti();
@@ -1078,7 +1627,7 @@ function resetQuiz() {
   els.quizBody.classList.remove('hidden');
 }
 
-/** Acak urutan soal, reset progres, lalu mulai lagi dari soal pertama. */
+/** Acak urutan soal dan opsi, reset progres, lalu mulai lagi dari soal pertama. */
 function shuffleQuiz() {
   if (state.quiz.length < 2) return;
 
@@ -1091,6 +1640,7 @@ function shuffleQuiz() {
     [state.quiz[0], state.quiz[swapIndex]] = [state.quiz[swapIndex], state.quiz[0]];
   }
 
+  shuffleQuizOptions();
   resetQuiz();
   renderQuizQuestion();
 }
@@ -1259,7 +1809,7 @@ function resetTf() {
 
 /** Acak ulang kombinasi + urutan soal T/F, lalu mulai dari awal. */
 function shuffleTf() {
-  const questions = buildTrueFalseQuestions(state.cards);
+  const questions = buildTrueFalseQuestions(state.cards, { randomize: true });
   if (questions.length === 0) return;
 
   state.tf = questions;
@@ -1875,10 +2425,12 @@ function applyLanguage(nextLang, options = {}) {
   });
 
   disarmClear();
+  clearHint();
 
   refreshTimerLabels(quizTimer);
   refreshTimerLabels(tfTimer);
 
+  renderStructuredRows();
   updateCounters();
   updateStats();
   setLoading(state.loading);
@@ -1915,9 +2467,18 @@ function applyLanguage(nextLang, options = {}) {
 function updateCounters() {
   const value = els.notes.value;
   const points = value.split(/\r?\n/).filter((line) => line.trim().length > 0).length;
+  const completeRows = countCompleteStructuredRows();
 
   els.charCount.textContent = t('input.chars', { n: value.length });
   els.lineCount.textContent = t('input.points', { n: points });
+  els.structuredCount.textContent = t('structured.count', {
+    complete: completeRows,
+    total: state.structuredRows.length,
+  });
+
+  const pasteActive = state.inputMode === 'paste';
+  els.pasteCounts.classList.toggle('hidden', !pasteActive);
+  els.structuredCount.classList.toggle('hidden', pasteActive);
 }
 
 function showHint(message, type = 'error') {
@@ -1936,6 +2497,17 @@ function setLoading(loading) {
   els.btnSample.disabled = loading;
   els.btnExport.disabled = loading;
   els.btnImport.disabled = loading;
+  els.btnAddRow.disabled = loading;
+  els.notes.disabled = loading;
+
+  els.modeButtons.forEach((button) => {
+    button.disabled = loading;
+  });
+
+  els.structuredRows.querySelectorAll('.structured-input, .row-remove').forEach((field) => {
+    field.disabled = loading;
+  });
+
   els.generateSpinner.classList.toggle('hidden', !loading);
   els.generateIcon.classList.toggle('hidden', loading);
   els.generateLabel.textContent = loading ? t('input.loading') : t('input.generate');
@@ -1950,18 +2522,24 @@ let saveStatusTimer = null;
 let clearArmed = false;
 let clearTimer = null;
 
+function structuredRowsForStorage() {
+  return state.structuredRows.map((row) => ({
+    term: row.term,
+    explanation: row.explanation,
+  }));
+}
+
 function saveNotes() {
-  const text = els.notes.value;
-
   try {
-    if (!text.trim()) {
-      window.localStorage.removeItem(NOTES_KEY);
-      return;
-    }
-
     window.localStorage.setItem(
       NOTES_KEY,
-      JSON.stringify({ version: 3, text, updatedAt: new Date().toISOString() }),
+      JSON.stringify({
+        version: STORAGE_VERSION,
+        inputMode: state.inputMode,
+        notes: els.notes.value,
+        structured: structuredRowsForStorage(),
+        updatedAt: new Date().toISOString(),
+      }),
     );
   } catch (error) {
     // localStorage bisa diblokir; aplikasi tetap berjalan tanpa auto-save.
@@ -1987,21 +2565,38 @@ function flashSaveStatus() {
   }, 1900);
 }
 
-function readSavedNotes() {
+function readSavedInput() {
+  const fallback = { inputMode: 'paste', notes: '', structured: null };
+
   try {
     const raw = window.localStorage.getItem(NOTES_KEY);
-    if (!raw) return '';
+    if (!raw) return fallback;
 
     try {
       const parsed = JSON.parse(raw);
-      if (typeof parsed === 'string') return parsed;
-      if (parsed && typeof parsed.text === 'string') return parsed.text;
-      return '';
+
+      if (typeof parsed === 'string') {
+        return { ...fallback, notes: parsed };
+      }
+
+      if (!parsed || typeof parsed !== 'object') return fallback;
+
+      return {
+        inputMode: parsed.inputMode === 'structured' ? 'structured' : 'paste',
+        notes: typeof parsed.notes === 'string'
+          ? parsed.notes
+          : typeof parsed.text === 'string'
+            ? parsed.text
+            : '',
+        structured: Array.isArray(parsed.structured)
+          ? normalizeStructuredRows(parsed.structured)
+          : null,
+      };
     } catch (error) {
-      return raw; // cadangan untuk data lama berupa teks biasa
+      return { ...fallback, notes: raw }; // cadangan untuk data lama berupa teks biasa
     }
   } catch (error) {
-    return '';
+    return fallback;
   }
 }
 
@@ -2016,17 +2611,8 @@ function clearSavedNotes() {
   }
 }
 
-/** Muat kembali catatan terakhir lalu susun ulang materi tanpa jeda loading. */
-function restoreSavedNotes() {
-  const saved = readSavedNotes();
-  if (!saved.trim()) return;
-
-  els.notes.value = saved;
-  updateCounters();
-
-  const cards = buildCards(extractSegments(saved));
-  if (cards.length < 2) return;
-
+/** Pasang kartu yang sudah divalidasi lalu segarkan seluruh area belajar. */
+function applyCards(cards) {
   state.cards = cards;
   state.quiz = buildQuiz(cards);
   state.tf = buildTrueFalseQuestions(cards);
@@ -2043,6 +2629,33 @@ function restoreSavedNotes() {
   renderWorkspace();
 }
 
+/** Muat kembali kedua mode input lalu susun materi dari mode yang aktif. */
+function restoreSavedInput() {
+  const saved = readSavedInput();
+
+  els.notes.value = saved.notes;
+  const hasStructuredContent = Array.isArray(saved.structured)
+    && saved.structured.some(
+      (row) => cleanStructuredValue(row.term) || cleanStructuredValue(row.explanation),
+    );
+  const hasSavedContent = saved.notes.trim().length > 0 || hasStructuredContent;
+  state.structuredRows = saved.structured === null || !hasSavedContent
+    ? createEmptyStructuredRows()
+    : saved.structured;
+
+  renderStructuredRows();
+  setInputMode(saved.inputMode, { persist: false });
+  updateCounters();
+
+  const cards = state.inputMode === 'structured'
+    ? buildStructuredCards()
+    : buildCards(extractSegments(saved.notes));
+
+  if (cards.length < 2) return;
+
+  applyCards(cards);
+}
+
 function dateStamp() {
   const now = new Date();
   const pad = (value) => String(value).padStart(2, '0');
@@ -2057,22 +2670,26 @@ function buildExportData() {
 
   return {
     app: 'AI Study Buddy',
-    version: 7,
+    version: EXPORT_VERSION,
     exportedAt: new Date().toISOString(),
     language: lang,
+    inputMode: state.inputMode,
     notes: els.notes.value,
+    structured: structuredRowsForStorage(),
     summary: {
       cards: state.cards.length,
       questions: state.quiz.length,
       answered,
       correct: state.score,
       trueFalse: state.tf.length,
+      structuredRows: countCompleteStructuredRows(),
     },
     cards: state.cards.map((card) => ({
       kind: card.kind,
       term: card.term,
       definition: card.definition,
       source: card.source,
+      sourceMode: card.sourceMode || 'paste',
       ...(card.cloze ? { cloze: card.cloze } : {}),
     })),
     quiz: state.quiz.map((question) => ({
@@ -2100,7 +2717,7 @@ function buildExportData() {
 }
 
 function exportNotes() {
-  if (!els.notes.value.trim()) {
+  if (!hasInputData()) {
     showHint(t('storage.emptyExport'));
     return;
   }
@@ -2138,18 +2755,52 @@ function importFromText(text, fileName = '') {
       showHint(t('storage.invalidJson'));
       return;
     }
+
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      showHint(t('storage.invalidFile'));
+      return;
+    }
   }
 
-  const notes = isJson
-    ? (data && typeof data.notes === 'string' ? data.notes : '')
-    : content;
+  let notes = content;
+  let importedStructured = null;
+  let inputMode = 'paste';
 
-  if (!notes.trim()) {
+  if (isJson) {
+    notes = typeof data.notes === 'string'
+      ? data.notes
+      : typeof data.text === 'string'
+        ? data.text
+        : '';
+
+    if (Array.isArray(data.structured)) {
+      importedStructured = normalizeStructuredRows(data.structured);
+    }
+
+    // File v7 dan file teks selalu kembali ke mode tempel; file v8 membawa mode aktifnya.
+    inputMode = data.inputMode === 'structured' ? 'structured' : 'paste';
+  }
+
+  const importedRows = importedStructured === null ? [] : importedStructured;
+  const hasImportedData = notes.trim().length > 0
+    || importedRows.some(
+      (row) => cleanStructuredValue(row.term) || cleanStructuredValue(row.explanation),
+    );
+
+  if (!hasImportedData) {
     showHint(t('storage.invalidFile'));
     return;
   }
 
   els.notes.value = notes;
+
+  if (importedStructured !== null) {
+    state.structuredRows = importedStructured;
+  }
+
+  clearStructuredErrors();
+  renderStructuredRows();
+  setInputMode(inputMode, { persist: false });
   updateCounters();
   saveNotes();
 
@@ -2204,49 +2855,55 @@ function generate() {
   disarmClear();
   clearHint();
 
-  const raw = els.notes.value.trim();
+  let source;
 
-  if (!raw) {
-    showHint(t('hint.empty'));
-    els.notes.focus();
-    return false;
+  if (state.inputMode === 'structured') {
+    const result = validateStructuredRows();
+
+    if (!result.ok) {
+      showHint(result.hint);
+      if (result.focus) focusStructuredCell(result.focus.id, result.focus.field);
+      else els.btnAddRow.focus();
+      return false;
+    }
+
+    source = { mode: 'structured', cards: result.cards };
+  } else {
+    const raw = els.notes.value.trim();
+
+    if (!raw) {
+      showHint(t('hint.empty'));
+      els.notes.focus();
+      return false;
+    }
+
+    if (countMeaningfulChars(raw) < MIN_NOTE_MEANINGFUL_CHARS) {
+      showHint(t('hint.short'));
+      els.notes.focus();
+      return false;
+    }
+
+    source = { mode: 'paste', raw };
   }
 
-  if (countMeaningfulChars(raw) < MIN_NOTE_MEANINGFUL_CHARS) {
-    showHint(t('hint.short'));
-    els.notes.focus();
-    return false;
-  }
-
+  saveNotes();
   setLoading(true);
 
-  // Jeda singkat supaya terasa seperti sedang menganalisis catatan.
+  // Jeda singkat supaya terasa seperti sedang menganalisis materi.
   generateTimer = window.setTimeout(() => {
     generateTimer = null;
 
     try {
-      const segments = extractSegments(raw);
-      const cards = buildCards(segments);
+      const cards = source.mode === 'structured'
+        ? source.cards
+        : buildCards(extractSegments(source.raw));
 
       if (cards.length < 2) {
-        showHint(t('hint.fewCards'));
+        showHint(source.mode === 'structured' ? t('structured.errorMin') : t('hint.fewCards'));
         return;
       }
 
-      state.cards = cards;
-      state.quiz = buildQuiz(cards);
-      state.tf = buildTrueFalseQuestions(cards);
-      state.cardIndex = 0;
-      state.quizIndex = 0;
-      state.score = 0;
-      state.streak = 0;
-      state.answered = false;
-      state.tfIndex = 0;
-      state.tfScore = 0;
-      state.tfStreak = 0;
-      state.tfAnswered = false;
-
-      renderWorkspace();
+      applyCards(cards);
       els.studyPanels.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       console.error('Gagal menyusun materi:', error);
@@ -2260,14 +2917,25 @@ function generate() {
 }
 
 function loadSample() {
-  els.notes.value = lang === 'en' ? SAMPLE_NOTES_EN : SAMPLE_NOTES;
-  updateCounters();
   clearHint();
+
+  if (state.inputMode === 'structured') {
+    const sample = lang === 'en' ? SAMPLE_STRUCTURED_EN : SAMPLE_STRUCTURED;
+    state.structuredRows = sample.map((row) => createStructuredRow(row.term, row.explanation));
+    clearStructuredErrors();
+    renderStructuredRows();
+    updateCounters();
+    focusActiveInput();
+  } else {
+    els.notes.value = lang === 'en' ? SAMPLE_NOTES_EN : SAMPLE_NOTES;
+    updateCounters();
+    els.notes.focus();
+    els.notes.setSelectionRange(0, 0);
+    els.notes.scrollTop = 0;
+  }
+
   saveNotes();
   flashSaveStatus();
-  els.notes.focus();
-  els.notes.setSelectionRange(0, 0);
-  els.notes.scrollTop = 0;
   generate();
 }
 
@@ -2304,12 +2972,15 @@ function startOver() {
   els.tfCelebration.hidden = true;
 
   els.notes.value = '';
+  state.structuredRows = createEmptyStructuredRows();
+  clearStructuredErrors();
+  renderStructuredRows();
   updateCounters();
   clearHint();
   els.studyPanels.classList.add('hidden');
   els.studyEmpty.classList.remove('hidden');
   updateStats();
-  els.notes.focus();
+  focusActiveInput();
 }
 
 function retryQuiz() {
@@ -2329,6 +3000,65 @@ function retryTf() {
 els.notes.addEventListener('input', () => {
   updateCounters();
   scheduleSave();
+});
+
+els.modeButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    if (button.dataset.inputMode === state.inputMode) return;
+    setInputMode(button.dataset.inputMode, { focus: true });
+  });
+
+  button.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+
+    const modes = els.modeButtons.map((item) => item.dataset.inputMode);
+    const current = modes.indexOf(state.inputMode);
+    let next = current;
+
+    if (event.key === 'ArrowRight') next = (current + 1) % modes.length;
+    else if (event.key === 'ArrowLeft') next = (current - 1 + modes.length) % modes.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = modes.length - 1;
+
+    if (next !== current) {
+      setInputMode(modes[next], { focus: false });
+      els.modeButtons[next].focus();
+    }
+  });
+});
+
+els.btnAddRow.addEventListener('click', addStructuredRow);
+
+els.structuredRows.addEventListener('input', (event) => {
+  const field = event.target instanceof Element
+    ? event.target.closest('.structured-input')
+    : null;
+  if (!field) return;
+
+  const rowEl = field.closest('.structured-row');
+  if (!rowEl) return;
+
+  const row = state.structuredRows.find((item) => item.id === rowEl.dataset.rowId);
+  if (!row) return;
+
+  const name = field.dataset.field;
+  if (name !== 'term' && name !== 'explanation') return;
+
+  row[name] = field.value;
+  autoGrowTextarea(field);
+  clearStructuredErrors();
+  clearHint();
+  updateCounters();
+  scheduleSave();
+});
+
+els.structuredRows.addEventListener('click', (event) => {
+  const button = event.target instanceof Element
+    ? event.target.closest('[data-remove-row]')
+    : null;
+  if (!button) return;
+  removeStructuredRow(button.dataset.removeRow);
 });
 
 els.btnGenerate.addEventListener('click', generate);
@@ -2464,7 +3194,10 @@ document.addEventListener('keydown', (event) => {
    Inisialisasi
    ============================================================ */
 
+state.structuredRows = createEmptyStructuredRows();
+renderStructuredRows();
+setInputMode('paste', { persist: false });
 updateCounters();
 renderWorkspace();
 applyLanguage(lang, { persist: false });
-restoreSavedNotes();
+restoreSavedInput();

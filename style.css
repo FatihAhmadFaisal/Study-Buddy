@@ -522,6 +522,267 @@ html {
   opacity: 1;
 }
 
+/* ---------- Mode input ---------- */
+.mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  border-radius: 1rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(241 245 249 / 0.8);
+  padding: 0.25rem;
+}
+
+.mode-tab {
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgb(100 116 139);
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mode-tab:hover:not(:disabled):not(.is-active) {
+  background: rgb(255 255 255 / 0.65);
+  color: rgb(51 65 85);
+}
+
+.mode-tab.is-active {
+  background: #fff;
+  color: rgb(67 56 202);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06), inset 0 0 0 1px rgb(224 231 255);
+}
+
+.mode-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(199 210 254);
+}
+
+.mode-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.mode-panel {
+  border-radius: 0.9rem;
+}
+
+.mode-panel[hidden] {
+  display: none;
+}
+
+.mode-panel:focus-visible {
+  outline: 2px solid rgb(165 180 252);
+  outline-offset: 3px;
+}
+
+.mode-desc {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: rgb(100 116 139);
+}
+
+/* ---------- Formulir soal terstruktur ---------- */
+.structured-rows {
+  display: flex;
+  max-height: 30rem;
+  flex-direction: column;
+  gap: 0.7rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 0.875rem;
+  padding-right: 0.15rem;
+}
+
+.structured-rows::-webkit-scrollbar {
+  width: 6px;
+}
+
+.structured-rows::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(148 163 184 / 0.4);
+}
+
+.structured-row {
+  border-radius: 1.05rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(248 250 252 / 0.78);
+  padding: 0.85rem;
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  animation: rowIn 0.25s ease both;
+}
+
+.structured-row:focus-within {
+  border-color: rgb(165 180 252);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(224 231 255 / 0.65);
+}
+
+.structured-row.has-error {
+  border-color: #fda4af;
+  background: #fff7f8;
+  box-shadow: 0 0 0 3px rgb(254 205 211 / 0.35);
+}
+
+.structured-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+.structured-row-number {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgb(99 102 241);
+}
+
+.row-remove {
+  display: grid;
+  height: 1.6rem;
+  width: 1.6rem;
+  place-items: center;
+  border-radius: 0.5rem;
+  color: rgb(148 163 184);
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.row-remove:hover:not(:disabled) {
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.row-remove:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(254 205 211);
+}
+
+.row-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.structured-field {
+  display: block;
+}
+
+.structured-field + .structured-field {
+  margin-top: 0.6rem;
+}
+
+.structured-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: rgb(71 85 105);
+}
+
+.structured-input {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  resize: none;
+  overflow: hidden;
+  border-radius: 0.8rem;
+  border: 1px solid rgb(226 232 240);
+  background: #fff;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: rgb(51 65 85);
+  outline: none;
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.structured-input::placeholder {
+  color: rgb(148 163 184);
+}
+
+.structured-input:focus {
+  border-color: rgb(129 140 248);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(224 231 255);
+}
+
+.structured-row.has-error .structured-input {
+  border-color: #fda4af;
+  background: #fffafb;
+}
+
+.structured-row.has-error .structured-input:focus {
+  border-color: #fb7185;
+  box-shadow: 0 0 0 3px rgb(254 205 211 / 0.6);
+}
+
+.structured-input:disabled {
+  cursor: not-allowed;
+  background: rgb(248 250 252);
+  color: rgb(148 163 184);
+}
+
+.structured-empty {
+  margin-top: 0.875rem;
+  border-radius: 1rem;
+  border: 1px dashed rgb(203 213 225);
+  background: rgb(248 250 252 / 0.7);
+  padding: 1.35rem 1rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.6;
+  color: rgb(100 116 139);
+}
+
+.add-row-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 0.9rem;
+  border: 1px dashed rgb(165 180 252);
+  background: rgb(238 242 255 / 0.6);
+  padding: 0.65rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgb(67 56 202);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.add-row-btn:hover:not(:disabled) {
+  border-color: rgb(129 140 248);
+  background: rgb(224 231 255 / 0.8);
+}
+
+.add-row-btn:focus-visible {
+  outline: none;
+  border-color: rgb(129 140 248);
+  box-shadow: 0 0 0 3px rgb(224 231 255);
+}
+
+.add-row-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ---------- Tab ---------- */
 .tabs {
   display: inline-flex;
@@ -1088,12 +1349,32 @@ html {
   .card-content--question {
     font-size: 1.15rem;
   }
+
+  .structured-rows {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .structured-row {
+    padding: 0.8rem;
+  }
+
+  .structured-input {
+    font-size: 0.875rem;
+  }
 }
 
 @media (max-width: 420px) {
   .tab-btn {
     padding-left: 0.6rem;
     padding-right: 0.6rem;
+  }
+
+  .mode-tab {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 0.6875rem;
   }
 }
 
@@ -1114,7 +1395,8 @@ html {
   .streak-chip.is-bump,
   .celebration-badge,
   .timer-menu,
-  .spinner {
+  .spinner,
+  .structured-row {
     animation: none;
   }
 }

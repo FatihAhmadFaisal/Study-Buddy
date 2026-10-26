@@ -79,7 +79,7 @@
     <!-- ================= PANEL INPUT ================= -->
     <section class="panel p-5 sm:p-6">
       <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <h2 class="text-base font-bold text-slate-900" data-i18n="input.title">1. Tempel catatanmu</h2>
+        <h2 class="text-base font-bold text-slate-900" data-i18n="input.title">1. Masukkan materimu</h2>
         <div class="ml-auto flex items-center gap-2">
           <button id="btn-sample" type="button" class="text-xs font-bold text-indigo-600 transition hover:text-indigo-800 hover:underline" data-i18n="input.sample">
             Pakai contoh
@@ -89,34 +89,88 @@
             <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
               <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M10 11v6M14 11v6" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
-            <span id="clear-label" data-i18n="storage.clear">Hapus catatan</span>
+            <span id="clear-label" data-i18n="storage.clear">Hapus semua</span>
           </button>
         </div>
       </div>
-      <p class="mt-1 text-sm leading-relaxed text-slate-500" data-i18n="input.desc">
-        Satu poin per baris, atau tulis bebas. Kami akan memecah dan menyusunnya otomatis.
-      </p>
 
-      <label for="notes" class="sr-only" data-i18n="input.label">Catatan kuliah</label>
-      <textarea
-        id="notes"
-        rows="12"
-        spellcheck="false"
-        class="mt-3 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-relaxed text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
-        data-i18n-placeholder="input.placeholder"
-        placeholder="Contoh:&#10;Overfitting terjadi ketika model terlalu hafal data latih.&#10;Neural network: jaringan saraf tiruan berlapis.&#10;Gradient descent adalah algoritma optimasi bobot."
-      ></textarea>
+      <div class="mode-tabs mt-3" role="tablist" aria-label="Mode input materi" data-i18n-aria="mode.aria">
+        <button
+          id="mode-paste"
+          type="button"
+          class="mode-tab is-active"
+          data-input-mode="paste"
+          role="tab"
+          aria-selected="true"
+          aria-controls="paste-panel"
+          data-i18n="mode.paste"
+        >
+          Tempel Teks
+        </button>
+        <button
+          id="mode-structured"
+          type="button"
+          class="mode-tab"
+          data-input-mode="structured"
+          role="tab"
+          aria-selected="false"
+          aria-controls="structured-panel"
+          data-i18n="mode.structured"
+        >
+          Formulir Soal
+        </button>
+      </div>
+
+      <!-- Mode 1: tempel teks bebas -->
+      <div id="paste-panel" class="mode-panel" role="tabpanel" aria-labelledby="mode-paste" tabindex="0">
+        <p class="mode-desc" data-i18n="input.desc">
+          Satu poin per baris, atau tulis bebas. Kami akan memecah dan menyusunnya otomatis.
+        </p>
+
+        <label for="notes" class="sr-only" data-i18n="input.label">Catatan kuliah</label>
+        <textarea
+          id="notes"
+          rows="12"
+          spellcheck="false"
+          class="mt-3 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-relaxed text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+          data-i18n-placeholder="input.placeholder"
+          placeholder="Contoh:&#10;Overfitting terjadi ketika model terlalu hafal data latih.&#10;Neural network: jaringan saraf tiruan berlapis.&#10;Gradient descent adalah algoritma optimasi bobot."
+        ></textarea>
+      </div>
+
+      <!-- Mode 2: formulir soal terstruktur -->
+      <div id="structured-panel" class="mode-panel hidden" role="tabpanel" aria-labelledby="mode-structured" tabindex="0" hidden>
+        <p class="mode-desc" data-i18n="structured.desc">
+          Isi satu istilah dan penjelasannya per baris. Setiap baris lengkap menjadi satu kartu.
+        </p>
+
+        <div id="structured-rows" class="structured-rows" aria-label="Daftar soal terstruktur" data-i18n-aria="structured.rowsAria"></div>
+
+        <p id="structured-empty" class="structured-empty hidden" data-i18n="structured.empty">
+          Belum ada soal. Klik “Tambahkan Soal” untuk mulai.
+        </p>
+
+        <button id="btn-add-row" type="button" class="add-row-btn mt-3">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          <span data-i18n="structured.add">Tambahkan Soal</span>
+        </button>
+      </div>
 
       <div class="mt-2 flex items-center justify-between gap-3 text-xs text-slate-400">
-        <span id="char-count">0 karakter</span>
         <span class="flex items-center gap-3">
-          <span id="save-status" class="save-status" aria-live="polite">
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
-              <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <span data-i18n="storage.saved">Tersimpan</span>
+          <span id="paste-counts" class="flex items-center gap-3">
+            <span id="char-count">0 karakter</span>
+            <span id="line-count">0 poin</span>
           </span>
-          <span id="line-count">0 poin</span>
+          <span id="structured-count" class="hidden">0 dari 0 soal lengkap</span>
+        </span>
+        <span id="save-status" class="save-status" aria-live="polite">
+          <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span data-i18n="storage.saved">Tersimpan</span>
         </span>
       </div>
 
@@ -149,11 +203,17 @@
 
       <div class="mt-5 rounded-2xl bg-slate-50/80 p-4 text-xs leading-relaxed text-slate-500">
         <p class="font-bold text-slate-600" data-i18n="tips.title">Tips agar hasilnya bagus</p>
-        <ul class="mt-2 list-disc space-y-1 pl-4">
+        <ul id="tips-paste" class="mt-2 list-disc space-y-1 pl-4">
           <li data-i18n-html="tips.one">Gunakan format <code class="code-chip">Istilah: penjelasan</code> untuk kartu definisi.</li>
           <li data-i18n-html="tips.two">Baris tanpa titik dua akan diubah menjadi kartu isian rumpang.</li>
           <li data-i18n-html="tips.three">Minimal 2 poin agar kuis bisa dibuat.</li>
           <li data-i18n="tips.four">Catatan tersimpan otomatis di browser ini.</li>
+        </ul>
+        <ul id="tips-structured" class="mt-2 hidden list-disc space-y-1 pl-4">
+          <li data-i18n-html="structured.tips.one">Setiap baris lengkap menjadi <strong>kartu definisi</strong>, soal MCQ, dan pernyataan T/F.</li>
+          <li data-i18n-html="structured.tips.two">Isi minimal <strong>dua baris lengkap</strong>: istilah dan penjelasan.</li>
+          <li data-i18n="structured.tips.three">Gunakan istilah dan penjelasan yang unik agar pilihan jawaban tidak rancu.</li>
+          <li data-i18n="structured.tips.four">Data formulir tersimpan otomatis di browser ini.</li>
         </ul>
       </div>
     </section>
@@ -171,7 +231,7 @@
         </div>
         <h2 class="mt-5 text-lg font-extrabold text-slate-900" data-i18n="empty.title">Materi belajarmu muncul di sini</h2>
         <p class="mt-2 max-w-sm text-sm leading-relaxed text-slate-500" data-i18n-html="empty.desc">
-          Tempel catatan kuliahmu, lalu tekan
+          Tempel catatan atau isi formulir soal, lalu tekan
           <span class="font-semibold text-slate-700">Buat Flashcard &amp; Kuis</span>.
         </p>
 
