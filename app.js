@@ -258,6 +258,7 @@ const TRANSLATIONS = {
     'quiz.correctTitle': 'Tepat sekali!',
     'quiz.wrongTitle': 'Belum tepat.',
     'quiz.next': 'Soal berikutnya →',
+    'quiz.keyHint': 'Tekan → untuk lanjut',
     'quiz.seeResult': 'Lihat hasil',
     'quiz.shuffle': 'Acak Kuis',
     'quiz.emptyTitle': 'Kuis belum bisa dibuat',
@@ -411,6 +412,7 @@ const TRANSLATIONS = {
     'quiz.correctTitle': 'Correct!',
     'quiz.wrongTitle': 'Not quite.',
     'quiz.next': 'Next question →',
+    'quiz.keyHint': 'Press → to continue',
     'quiz.seeResult': 'See results',
     'quiz.shuffle': 'Shuffle Quiz',
     'quiz.emptyTitle': "Quiz can't be created yet",
@@ -577,6 +579,7 @@ const els = {
   quizOptions: $('#quiz-options'),
   quizFeedback: $('#quiz-feedback'),
   quizNext: $('#quiz-next'),
+  quizNextHint: $('#quiz-next-hint'),
   quizShuffle: $('#quiz-shuffle'),
   quizTimer: $('#quiz-timer'),
   quizTimerMenu: $('#quiz-timer-menu'),
@@ -606,6 +609,7 @@ const els = {
   tfDefinition: $('#tf-definition'),
   tfFeedback: $('#tf-feedback'),
   tfNext: $('#tf-next'),
+  tfNextHint: $('#tf-next-hint'),
   tfTrue: $('#tf-true'),
   tfFalse: $('#tf-false'),
   tfShuffle: $('#tf-shuffle'),
@@ -1493,6 +1497,7 @@ function renderQuizQuestion() {
   els.quizFeedback.className = 'quiz-feedback mt-4 hidden';
   els.quizFeedback.innerHTML = '';
   els.quizNext.classList.add('hidden');
+  els.quizNextHint.classList.add('hidden');
 
   // Saat bahasa diganti di tengah kuis, jawaban yang sudah dipilih tetap ditampilkan.
   if (answered) paintAnswer(question);
@@ -1550,6 +1555,7 @@ function paintAnswer(question) {
     ? t('quiz.seeResult')
     : t('quiz.next');
   els.quizNext.classList.remove('hidden');
+  els.quizNextHint.classList.remove('hidden');
 }
 
 function nextQuestion() {
@@ -1683,6 +1689,7 @@ function renderTfQuestion() {
   els.tfFeedback.className = 'quiz-feedback mt-4 hidden';
   els.tfFeedback.innerHTML = '';
   els.tfNext.classList.add('hidden');
+  els.tfNextHint.classList.add('hidden');
 
   // Saat bahasa diganti, jawaban yang sudah dipilih tetap ditampilkan.
   if (answered) paintTfAnswer(question);
@@ -1754,6 +1761,7 @@ function paintTfAnswer(question) {
     ? t('quiz.seeResult')
     : t('quiz.next');
   els.tfNext.classList.remove('hidden');
+  els.tfNextHint.classList.remove('hidden');
 }
 
 function nextTfQuestion() {
@@ -3178,7 +3186,13 @@ document.addEventListener('keydown', (event) => {
     if (Object.prototype.hasOwnProperty.call(choices, key)) {
       event.preventDefault();
       selectAnswer(choices[key]);
-    } else if (event.key === 'Enter' && state.answered && tag !== 'button') {
+    } else if (
+      event.key === 'ArrowRight'
+      && !event.shiftKey
+      && !event.repeat
+      && state.answered
+      && !els.quizNext.classList.contains('hidden')
+    ) {
       event.preventDefault();
       nextQuestion();
     }
@@ -3193,7 +3207,13 @@ document.addEventListener('keydown', (event) => {
     } else if (key === 'f' || key === 's') {
       event.preventDefault();
       selectTfAnswer(false);
-    } else if (event.key === 'Enter' && state.tfAnswered && tag !== 'button') {
+    } else if (
+      event.key === 'ArrowRight'
+      && !event.shiftKey
+      && !event.repeat
+      && state.tfAnswered
+      && !els.tfNext.classList.contains('hidden')
+    ) {
       event.preventDefault();
       nextTfQuestion();
     }

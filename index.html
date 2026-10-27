@@ -452,8 +452,9 @@
 
             <div id="quiz-feedback" class="quiz-feedback mt-4 hidden" aria-live="polite"></div>
 
-            <div class="mt-5 flex justify-end">
-              <button id="quiz-next" type="button" class="next-btn hidden">Soal berikutnya →</button>
+            <div class="mt-5 flex flex-col items-end gap-1.5">
+              <button id="quiz-next" type="button" class="next-btn hidden" aria-keyshortcuts="ArrowRight">Soal berikutnya →</button>
+              <p id="quiz-next-hint" class="hidden text-[11px] font-medium text-slate-400" data-i18n="quiz.keyHint" aria-hidden="true">Tekan → untuk lanjut</p>
             </div>
           </div>
 
@@ -570,8 +571,9 @@
               </button>
             </div>
 
-            <div class="mt-5 flex justify-end">
-              <button id="tf-next" type="button" class="next-btn hidden">Soal berikutnya →</button>
+            <div class="mt-5 flex flex-col items-end gap-1.5">
+              <button id="tf-next" type="button" class="next-btn hidden" aria-keyshortcuts="ArrowRight">Soal berikutnya →</button>
+              <p id="tf-next-hint" class="hidden text-[11px] font-medium text-slate-400" data-i18n="quiz.keyHint" aria-hidden="true">Tekan → untuk lanjut</p>
             </div>
           </div>
 
