@@ -583,6 +583,34 @@ html {
   color: rgb(100 116 139);
 }
 
+.scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(148 163 184);
+}
+
+.scroll-key {
+  display: inline-grid;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  place-items: center;
+  border-radius: 0.35rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(255 255 255 / 0.9);
+  font-family: inherit;
+  font-size: 0.625rem;
+  line-height: 1;
+  color: rgb(100 116 139);
+}
+
+.paste-notes {
+  scroll-behavior: smooth;
+}
+
 /* ---------- Formulir soal terstruktur ---------- */
 .structured-rows {
   display: flex;
@@ -591,6 +619,7 @@ html {
   gap: 0.7rem;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-behavior: smooth;
   margin-top: 0.875rem;
   padding-right: 0.15rem;
 }
@@ -1388,6 +1417,11 @@ html {
   .quiz-option,
   .timer-ring-progress {
     transition-duration: 0.01ms;
+  }
+
+  .paste-notes,
+  .structured-rows {
+    scroll-behavior: auto;
   }
 
   .card-swap,

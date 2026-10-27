@@ -168,6 +168,7 @@ const TRANSLATIONS = {
     'input.title': '1. Masukkan materimu',
     'input.sample': 'Pakai contoh',
     'input.desc': 'Satu poin per baris, atau tulis bebas. Kami akan memecah dan menyusunnya otomatis.',
+    'input.scrollHint': 'untuk menggulir area ini',
     'input.label': 'Catatan kuliah',
     'input.placeholder': 'Contoh:\nOverfitting terjadi ketika model terlalu hafal data latih.\nNeural network: jaringan saraf tiruan berlapis.\nGradient descent adalah algoritma optimasi bobot.',
     'input.chars': '{n} karakter',
@@ -322,6 +323,7 @@ const TRANSLATIONS = {
     'input.title': '1. Add your material',
     'input.sample': 'Use sample',
     'input.desc': "One point per line, or write freely. We'll split and organize it for you.",
+    'input.scrollHint': 'to scroll this area',
     'input.label': 'Lecture notes',
     'input.placeholder': 'Example:\nOverfitting occurs when a model memorizes the training data too closely.\nNeural network: an artificial neural network with stacked layers.\nGradient descent is an algorithm that optimizes model weights.',
     'input.chars': '{n} characters',
@@ -3152,10 +3154,65 @@ els.langButtons.forEach((button) => {
   });
 });
 
+/* ============================================================
+   Gulir area input dengan panah atas/bawah (v8.4)
+   ============================================================ */
+
+const INPUT_SCROLL_STEP = 72;
+
+function canScroll(element) {
+  return Boolean(element) && element.scrollHeight - element.clientHeight > 1;
+}
+
+/**
+ * Panah atas/bawah hanya menggulir area input yang sedang aktif.
+ * Mode tempel memakai scrollbar internal textarea, sedangkan mode
+ * terstruktur memakai kontainer baris. Di layar sempit baris formulir
+ * mengalir ke halaman, jadi halaman itulah yang digulir.
+ */
+function resolveInputScrollTarget(mode) {
+  if (mode === 'paste') {
+    return canScroll(els.notes) ? els.notes : null;
+  }
+
+  const rows = els.structuredRows;
+  if (!rows) return null;
+
+  const overflowY = window.getComputedStyle(rows).overflowY;
+  if (overflowY === 'visible' || overflowY === 'hidden') {
+    const page = document.scrollingElement;
+    return canScroll(page) ? page : null;
+  }
+
+  return canScroll(rows) ? rows : null;
+}
+
+function handleInputAreaScroll(event) {
+  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return false;
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return false;
+  if (event.isComposing) return false;
+  if (isTimerMenuOpen()) return false;
+
+  const active = document.activeElement;
+  const panel = active instanceof Element ? active.closest('.mode-panel') : null;
+  if (!panel || panel.hidden) return false;
+
+  const mode = panel === els.structuredPanel ? 'structured' : 'paste';
+  if (mode !== state.inputMode) return false;
+
+  const target = resolveInputScrollTarget(mode);
+  if (!target) return false;
+
+  event.preventDefault();
+  target.scrollTop += event.key === 'ArrowUp' ? -INPUT_SCROLL_STEP : INPUT_SCROLL_STEP;
+  return true;
+}
+
 document.addEventListener('keydown', (event) => {
   if (event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.key === 'Escape' && closeAllTimerMenus({ restoreFocus: true })) return;
   if (isTimerMenuOpen()) return;
+  if (handleInputAreaScroll(event)) return;
 
   const tag = (document.activeElement?.tagName || '').toLowerCase();
   if (['input', 'textarea', 'select'].includes(tag)) return;

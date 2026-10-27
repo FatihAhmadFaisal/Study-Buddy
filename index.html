@@ -127,12 +127,18 @@
           Satu poin per baris, atau tulis bebas. Kami akan memecah dan menyusunnya otomatis.
         </p>
 
+        <p class="scroll-hint">
+          <kbd class="scroll-key">↑</kbd>
+          <kbd class="scroll-key">↓</kbd>
+          <span data-i18n="input.scrollHint">untuk menggulir area ini</span>
+        </p>
+
         <label for="notes" class="sr-only" data-i18n="input.label">Catatan kuliah</label>
         <textarea
           id="notes"
           rows="12"
           spellcheck="false"
-          class="mt-3 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-relaxed text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+          class="paste-notes mt-3 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-relaxed text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
           data-i18n-placeholder="input.placeholder"
           placeholder="Contoh:&#10;Overfitting terjadi ketika model terlalu hafal data latih.&#10;Neural network: jaringan saraf tiruan berlapis.&#10;Gradient descent adalah algoritma optimasi bobot."
         ></textarea>
@@ -142,6 +148,12 @@
       <div id="structured-panel" class="mode-panel hidden" role="tabpanel" aria-labelledby="mode-structured" tabindex="0" hidden>
         <p class="mode-desc" data-i18n="structured.desc">
           Isi satu istilah dan penjelasannya per baris. Setiap baris lengkap menjadi satu kartu.
+        </p>
+
+        <p class="scroll-hint">
+          <kbd class="scroll-key">↑</kbd>
+          <kbd class="scroll-key">↓</kbd>
+          <span data-i18n="input.scrollHint">untuk menggulir area ini</span>
         </p>
 
         <div id="structured-rows" class="structured-rows" aria-label="Daftar soal terstruktur" data-i18n-aria="structured.rowsAria"></div>

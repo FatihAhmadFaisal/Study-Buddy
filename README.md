@@ -1,4 +1,4 @@
-# AI Study Buddy — v8.3
+# AI Study Buddy — v8.4
 
 Ubah catatan kuliah menjadi **flashcard 3D**, **kuis pilihan ganda**, dan **kuis True / False** langsung di browser. Tidak ada backend; semua pemrosesan berjalan lokal.
 
@@ -13,6 +13,7 @@ Ubah catatan kuliah menjadi **flashcard 3D**, **kuis pilihan ganda**, dan **kuis
 - **Streak & konfeti** — kuis pilihan ganda dan True / False menampilkan indikator api 🔥 saat jawaban benar beruntun mencapai 2 atau lebih. Streak kembali ke 0 saat jawaban salah, kuis direset/diacak, atau kuis selesai. Skor akhir minimal 80% memicu animasi konfeti di layar hasil.
 - **Acak kartu & kuis** — tombol shuffle mengacak urutan flashcard. Pada kuis pilihan ganda dan True / False, materi yang baru dibuat atau diulang tetap memakai urutan input; urutan soal, opsi jawaban, dan kombinasi T/F hanya diacak saat tombol **Acak** diklik. Progres (skor, jawaban, indeks, streak) direset, lalu kuis dimulai dari soal pertama.
 - **Pintasan lanjut soal** — setelah menjawab soal pilihan ganda atau True / False, tekan **→** (`ArrowRight`) untuk langsung lanjut tanpa mengklik tombol Next. Hanya panah kanan yang memicu aksi ini; panah kiri/atas/bawah dan tombol lain tidak melompatkan soal. Pintasan nonaktif sebelum jawaban dipilih, saat mengetik di kolom input, atau saat menu timer terbuka.
+- **Gulir area input dengan keyboard** — klik area **Tempel Teks** atau **Formulir Soal** (termasuk kotak teks dan kolom isian di dalamnya), lalu tekan **↑** / **↓** untuk menggulir isi area secara mulus ketika materinya panjang. Panah atas/bawah hanya bekerja di area input yang sedang aktif dan tidak mengganggu navigasi flashcard maupun pintasan **→** di kuis. Di dalam kotak teks, kursor tetap bisa dipindah lewat klik, Home/End, atau Shift + panah.
 - **Timer kuis interaktif** — tombol ikon jam di kiri tombol Acak pada kuis pilihan ganda dan True / False membuka pilihan durasi 5, 10, 30, atau 60 detik. Cincin melingkar di sekitar ikon menyusut sesuai sisa waktu. Timer memulai ulang penuh di setiap soal; jika waktu habis, soal dianggap salah, umpan balik ditampilkan, lalu kuis otomatis lanjut ke soal berikutnya atau ke layar hasil. Tombol Acak/Ulangi dan perpindahan tab mematikan serta mereset timer.
 - **Dua bahasa (ID/EN)** — seluruh antarmuka berganti bahasa lewat toggle di header, termasuk label formulir, tips per mode, label aksesibilitas streak, label timer, dan pesan selebrasi. Pilihan bahasa diingat.
 - **Auto-save** — catatan dan formulir tersimpan otomatis di `localStorage`, termasuk mode input yang sedang aktif. Saat halaman dibuka kembali, materi dari mode aktif dibuat ulang otomatis.
