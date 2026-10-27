@@ -1135,7 +1135,8 @@ function focusActiveInput() {
 
 /**
  * Ambil maksimal empat opsi unik berurutan dari pool asli. Blok empat baris
- * dipakai agar posisi jawaban benar tetap bervariasi tanpa pengacakan.
+ * dipakai agar pengecoh tetap dekat dengan konteks jawaban. Posisi jawaban
+ * benar sendiri diacak terpisah oleh randomizeAnswerPositions().
  * Jawaban benar tidak pernah dipakai sebagai pengecoh, dan pengecoh kembar
  * dibuang sebelum opsi dirender.
  */
@@ -1251,11 +1252,14 @@ function questionExplanation(question) {
 function buildQuiz(cards) {
   const questions = [];
 
-  // Satu soal per kartu, tanpa batas jumlah dan tanpa pengacakan otomatis.
+  // Satu soal per kartu, tanpa batas jumlah. Urutan soal mengikuti input,
+  // tetapi posisi jawaban benar diacak agar tidak membentuk pola A-B-C-D.
   cards.forEach((card) => {
     const question = makeQuestion(card, cards);
     if (question) questions.push(question);
   });
+
+  randomizeAnswerPositions(questions);
 
   return questions;
 }
@@ -1282,6 +1286,78 @@ function shuffleQuestionOptions(question) {
 /** Acak ulang opsi untuk seluruh soal MCQ aktif. */
 function shuffleQuizOptions() {
   state.quiz.forEach(shuffleQuestionOptions);
+}
+
+/**
+ * Sebar posisi jawaban benar secara acak dan merata ke seluruh soal.
+ *
+ * Setiap soal memakai posisi yang paling jarang terpakai agar sebaran A–D
+ * seimbang, dan posisi yang sama tidak dipakai dua soal berturut-turut.
+ * Hasilnya bukan pola tetap, tetapi tetap acak setiap kuis disusun ulang.
+ * Opsi hanya ditukar posisinya, jadi pengecoh tetap unik dan jawaban benar
+ * tidak pernah hilang.
+ */
+function randomizeAnswerPositions(questions) {
+  const usable = questions.filter(
+    (question) => Array.isArray(question.options)
+      && question.options.length >= 2
+      && Number.isInteger(question.answerIndex)
+      && question.answerIndex >= 0
+      && question.answerIndex < question.options.length,
+  );
+  if (usable.length === 0) return;
+
+  const usage = [0, 0, 0, 0];
+  const targets = [];
+  let previous = -1;
+
+  usable.forEach((question) => {
+    const size = Math.min(question.options.length, usage.length);
+    const candidates = [];
+    for (let position = 0; position < size; position += 1) {
+      if (position !== previous) candidates.push(position);
+    }
+
+    const pool = candidates.length > 0 ? candidates : [0];
+    const lowest = Math.min(...pool.map((position) => usage[position]));
+    const choices = pool.filter((position) => usage[position] === lowest);
+    const target = choices[Math.floor(Math.random() * choices.length)];
+
+    usage[target] += 1;
+    previous = target;
+    targets.push(target);
+  });
+
+  breakSequentialRun(targets, usable);
+
+  usable.forEach((question, index) => {
+    const target = targets[index];
+    if (target === question.answerIndex) return;
+
+    const displaced = question.options[question.answerIndex];
+    question.options[question.answerIndex] = question.options[target];
+    question.options[target] = displaced;
+    question.answerIndex = target;
+  });
+}
+
+/** Hindari pola A-B-C-D (naik atau turun) pada empat soal pertama. */
+function breakSequentialRun(targets, questions) {
+  if (targets.length < 4) return;
+
+  const step = (targets[1] - targets[0] + 4) % 4;
+  if (step !== 1 && step !== 3) return;
+
+  const isRun = [0, 1, 2, 3].every(
+    (offset) => targets[offset] === (targets[0] + offset * step) % 4,
+  );
+  if (!isRun) return;
+
+  // Tukar dua posisi pertama, tetapi hanya bila keduanya valid untuk soal
+  // yang bersangkutan (soal bisa memiliki kurang dari empat opsi).
+  const canSwap = targets[1] < questions[0].options.length
+    && targets[0] < questions[1].options.length;
+  if (canSwap) [targets[0], targets[1]] = [targets[1], targets[0]];
 }
 
 /* ============================================================
@@ -3004,6 +3080,9 @@ function startOver() {
 }
 
 function retryQuiz() {
+  // Setiap kali kuis diulang, posisi jawaban benar diacak lagi tanpa
+  // mengubah urutan soal.
+  randomizeAnswerPositions(state.quiz);
   resetQuiz();
   renderQuizQuestion();
 }
