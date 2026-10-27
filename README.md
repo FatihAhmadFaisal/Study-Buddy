@@ -1,4 +1,4 @@
-# AI Study Buddy — v8.1
+# AI Study Buddy — v8.2
 
 Ubah catatan kuliah menjadi **flashcard 3D**, **kuis pilihan ganda**, dan **kuis True / False** langsung di browser. Tidak ada backend; semua pemrosesan berjalan lokal.
 
@@ -6,9 +6,9 @@ Ubah catatan kuliah menjadi **flashcard 3D**, **kuis pilihan ganda**, dan **kuis
 
 - **Dua mode input yang terpisah** — pilih **Tempel Teks** untuk menulis catatan bebas, atau **Formulir Soal** untuk mengisi istilah dan penjelasan satu per satu. Kedua mode tidak pernah aktif bersamaan, dan tombol **Buat Flashcard & Kuis** hanya membaca mode yang sedang aktif.
 - **Formulir soal terstruktur** — tombol **Tambahkan Soal** menambahkan baris bernomor baru. Setiap baris memiliki kolom **Term / Istilah / Pertanyaan** dan **Explanation / Penjelasan / Jawaban** yang tersusun vertikal. Baris bisa dihapus, dan formulir menampilkan jumlah soal yang sudah lengkap.
-- **Validasi formulir** — baris kosong diabaikan, tetapi baris yang baru terisi separuh ditandai. Materi baru bisa dibuat jika ada minimal dua baris lengkap dengan istilah dan penjelasan yang unik.
+- **Validasi formulir** — baris kosong diabaikan, tetapi baris yang baru terisi separuh ditandai. Materi baru bisa dibuat jika ada minimal dua baris lengkap dengan istilah yang unik; penjelasan boleh sama antar soal.
 - **Flashcard otomatis** — catatan tempel dipecah menjadi kartu definisi dan kartu isian rumpang. Kartu dari formulir terstruktur selalu berupa kartu definisi, menampilkan istilah secara langsung di sisi depan, dan tidak memakai soal rumpang.
-- **Kuis pilihan ganda** — setiap baris valid menjadi satu soal tanpa batas 8 soal. Saat dibuat atau diulang, urutan soal dan opsi A–D mengikuti urutan input; pengacakan hanya terjadi ketika tombol **Acak Kuis** diklik. Tersedia pembahasan jawaban, skor otomatis, dan daftar materi untuk diulang. Kartu terstruktur memakai soal pasangan istilah–penjelasan yang akurat.
+- **Kuis pilihan ganda** — setiap baris valid menjadi satu soal tanpa batas 8 soal. Setiap nomor berisi satu jawaban benar dan hingga tiga pengecoh unik; opsi kembar dan pengecoh yang sama dengan jawaban benar otomatis dibuang. Saat dibuat atau diulang, urutan soal dan opsi A–D mengikuti urutan input; pengacakan hanya terjadi ketika tombol **Acak Kuis** diklik. Tersedia pembahasan jawaban, skor otomatis, dan daftar materi untuk diulang.
 - **Kuis True / False** — pernyataan disusun dari pasangan istilah–penjelasan dengan urutan mengikuti input dan pola benar/salah bergantian. Tombol **Acak T/F** membuat kombinasi serta urutan pernyataan acak. Ada feedback instan dan skor akhir.
 - **Streak & konfeti** — kuis pilihan ganda dan True / False menampilkan indikator api 🔥 saat jawaban benar beruntun mencapai 2 atau lebih. Streak kembali ke 0 saat jawaban salah, kuis direset/diacak, atau kuis selesai. Skor akhir minimal 80% memicu animasi konfeti di layar hasil.
 - **Acak kartu & kuis** — tombol shuffle mengacak urutan flashcard. Pada kuis pilihan ganda dan True / False, materi yang baru dibuat atau diulang tetap memakai urutan input; urutan soal, opsi jawaban, dan kombinasi T/F hanya diacak saat tombol **Acak** diklik. Progres (skor, jawaban, indeks, streak) direset, lalu kuis dimulai dari soal pertama.
@@ -60,7 +60,7 @@ Isi minimal dua baris lengkap:
 | Overfitting | Model terlalu hafal data latih sehingga buruk pada data baru. |
 | Regularisasi | Teknik mengurangi overfitting dengan memberi penalti pada model yang kompleks. |
 
-Setiap baris lengkap menjadi satu kartu definisi, lalu dipakai untuk menyusun soal pilihan ganda dan pernyataan True / False. Istilah dan penjelasan harus unik. Baris kosong boleh ditinggal, tetapi baris yang hanya terisi salah satu kolom akan ditandai dan harus dilengkapi atau dikosongkan.
+Setiap baris lengkap menjadi satu kartu definisi, lalu dipakai untuk menyusun soal pilihan ganda dan pernyataan True / False. Istilah harus unik, tetapi beberapa soal boleh memiliki penjelasan yang sama. Baris kosong boleh ditinggal, tetapi baris yang hanya terisi salah satu kolom akan ditandai dan harus dilengkapi atau dikosongkan.
 
 ## Penyimpanan
 

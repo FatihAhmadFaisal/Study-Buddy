@@ -193,7 +193,6 @@ const TRANSLATIONS = {
     'structured.errorMin': 'Isi minimal dua baris lengkap: istilah dan penjelasan.',
     'structured.errorIncomplete': 'Soal {n} belum lengkap. Isi istilah dan penjelasannya, atau kosongkan baris itu.',
     'structured.errorDuplicateTerm': 'Istilah “{term}” dipakai lebih dari sekali. Gunakan istilah yang unik.',
-    'structured.errorDuplicateExplanation': 'Penjelasan untuk “{term}” sama dengan baris lain. Buat penjelasan yang berbeda.',
     'structured.errorEmpty': 'Formulir masih kosong. Tambahkan minimal dua soal lengkap, ya.',
     'structured.errorMax': 'Maksimal {n} soal dalam satu formulir.',
 
@@ -204,7 +203,7 @@ const TRANSLATIONS = {
     'tips.four': 'Catatan tersimpan otomatis di browser ini.',
     'structured.tips.one': 'Setiap baris lengkap menjadi <strong>kartu definisi</strong>, soal MCQ, dan pernyataan T/F.',
     'structured.tips.two': 'Isi minimal <strong>dua baris lengkap</strong>: istilah dan penjelasan.',
-    'structured.tips.three': 'Gunakan istilah dan penjelasan yang unik agar pilihan jawaban tidak rancu.',
+    'structured.tips.three': 'Gunakan istilah yang unik; penjelasan boleh sama antar soal.',
     'structured.tips.four': 'Data formulir tersimpan otomatis di browser ini.',
 
     'storage.clear': 'Hapus semua',
@@ -347,7 +346,6 @@ const TRANSLATIONS = {
     'structured.errorMin': 'Add at least two complete rows: a term and an explanation.',
     'structured.errorIncomplete': 'Question {n} is incomplete. Fill in both the term and explanation, or clear that row.',
     'structured.errorDuplicateTerm': 'The term “{term}” is used more than once. Use unique terms.',
-    'structured.errorDuplicateExplanation': 'The explanation for “{term}” matches another row. Make it different.',
     'structured.errorEmpty': 'The form is still empty. Add at least two complete questions.',
     'structured.errorMax': 'A form can contain at most {n} questions.',
 
@@ -358,7 +356,7 @@ const TRANSLATIONS = {
     'tips.four': 'Your notes are saved automatically in this browser.',
     'structured.tips.one': 'Each complete row becomes a <strong>definition card</strong>, MCQ, and T/F statement.',
     'structured.tips.two': 'Add at least <strong>two complete rows</strong>: term and explanation.',
-    'structured.tips.three': 'Use unique terms and explanations so answer choices stay clear.',
+    'structured.tips.three': 'Use unique terms; explanations may be the same across questions.',
     'structured.tips.four': 'Your form data is saved automatically in this browser.',
 
     'storage.clear': 'Clear all',
@@ -967,7 +965,8 @@ function buildStructuredCards() {
       sourceMode: 'structured',
     }));
 
-  return uniqueBy(uniqueBy(cards, (card) => card.term), (card) => card.definition);
+  // Penjelasan boleh sama antar soal; hanya istilah yang perlu unik.
+  return uniqueBy(cards, (card) => card.term);
 }
 
 /**
@@ -975,7 +974,7 @@ function buildStructuredCards() {
  * - baris kosong diabaikan,
  * - baris yang hanya terisi separuh dianggap belum lengkap,
  * - minimal dua baris lengkap,
- * - istilah dan penjelasan harus unik.
+ * - istilah harus unik, sedangkan penjelasan boleh sama.
  */
 function validateStructuredRows() {
   clearStructuredErrors();
@@ -1033,21 +1032,6 @@ function validateStructuredRows() {
       };
     }
     seenTerms.set(key, entry);
-  }
-
-  const seenExplanations = new Map();
-  for (const entry of complete) {
-    const key = entry.explanation.toLowerCase();
-    if (seenExplanations.has(key)) {
-      const first = seenExplanations.get(key);
-      setStructuredRowErrors([first.row.id, entry.row.id]);
-      return {
-        ok: false,
-        hint: t('structured.errorDuplicateExplanation', { term: entry.term }),
-        focus: { id: entry.row.id, field: 'explanation' },
-      };
-    }
-    seenExplanations.set(key, entry);
   }
 
   return {
@@ -1144,29 +1128,53 @@ function focusActiveInput() {
    ============================================================ */
 
 /**
- * Ambil maksimal empat opsi berurutan dari pool asli. Blok empat baris dipakai
- * agar posisi jawaban benar tetap bervariasi tanpa pengacakan.
+ * Ambil maksimal empat opsi unik berurutan dari pool asli. Blok empat baris
+ * dipakai agar posisi jawaban benar tetap bervariasi tanpa pengacakan.
+ * Jawaban benar tidak pernah dipakai sebagai pengecoh, dan pengecoh kembar
+ * dibuang sebelum opsi dirender.
  */
 function buildOptionWindow(pool, correctValue) {
-  let correctIndex = pool.indexOf(correctValue);
+  const uniquePool = uniqueBy(pool, (value) => value);
+  const lowerCorrect = String(correctValue).toLowerCase();
+  let correctIndex = uniquePool.indexOf(correctValue);
+
   if (correctIndex < 0) {
-    const lower = correctValue.toLowerCase();
-    correctIndex = pool.findIndex((value) => value.toLowerCase() === lower);
+    correctIndex = uniquePool.findIndex((value) => value.toLowerCase() === lowerCorrect);
   }
 
   if (correctIndex < 0) {
-    return { options: [correctValue], answerIndex: 0 };
+    const options = [
+      correctValue,
+      ...uniquePool
+        .filter((value) => value.toLowerCase() !== lowerCorrect)
+        .slice(0, 3),
+    ];
+    return { options, answerIndex: 0 };
   }
 
   const windowSize = 4;
   const blockStart = Math.min(
     Math.floor(correctIndex / windowSize) * windowSize,
-    Math.max(0, pool.length - windowSize),
+    Math.max(0, uniquePool.length - windowSize),
+  );
+
+  // Filter tambahan agar opsi yang tampil dijamin tidak kembar.
+  const seen = new Set();
+  const options = [];
+  uniquePool.slice(blockStart, blockStart + windowSize).forEach((value) => {
+    const key = value.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    options.push(value);
+  });
+
+  const answerIndex = options.findIndex(
+    (value) => value.toLowerCase() === lowerCorrect,
   );
 
   return {
-    options: pool.slice(blockStart, blockStart + windowSize),
-    answerIndex: correctIndex - blockStart,
+    options,
+    answerIndex: answerIndex >= 0 ? answerIndex : 0,
   };
 }
 
@@ -1183,13 +1191,15 @@ function makeQuestion(card, cards) {
 
   const sourceLower = card.source.toLowerCase();
   const termIndex = sourceLower.indexOf(card.term.toLowerCase());
-  const canCloze = card.sourceMode !== 'structured'
-    && termIndex >= 0
-    && termPool.length >= 2;
+  const canCloze = termIndex >= 0 && termPool.length >= 2;
   const canMatch = card.kind === 'definition' && definitionPool.length >= 2;
 
-  // Kartu definisi memakai pasangan istilah–penjelasan; kartu konsep memakai cloze.
-  if (canMatch) {
+  // Bila jawaban unik terlalu sedikit untuk tiga pengecoh, pakai cloze dari
+  // istilah unik agar soal tetap punya empat opsi yang berbeda.
+  const useCloze = canCloze
+    && (!canMatch || (definitionPool.length < 4 && termPool.length >= 4));
+
+  if (canMatch && !useCloze) {
     const { options, answerIndex } = buildOptionWindow(definitionPool, card.definition);
 
     return {
