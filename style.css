@@ -332,7 +332,8 @@ html {
 .theme-menu {
   position: absolute;
   top: calc(100% + 0.5rem);
-  right: 0;
+  left: 0;
+  right: auto;
   z-index: 50;
   width: 17rem;
   max-height: 22rem;
@@ -1908,6 +1909,7 @@ html {
   }
 }
 
+/* ---------- v10.1: tata letak & target sentuh seluler ---------- */
 @media (max-width: 640px) {
   .flip-card {
     height: 320px;
@@ -1943,8 +1945,251 @@ html {
     padding: 0.8rem;
   }
 
+  /* Header: kontrol turun ke baris penuh agar tidak menumpuk */
+  .header-bar {
+    align-items: flex-start;
+    row-gap: 0.85rem;
+  }
+
+  .header-actions {
+    position: relative;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .header-stats {
+    width: 100%;
+  }
+
+  /* Pemilih bahasa & tema */
+  .lang-switch {
+    padding: 0.2rem;
+  }
+
+  .lang-btn {
+    display: inline-flex;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .theme-picker {
+    position: static;
+  }
+
+  .theme-toggle {
+    min-height: 2.75rem;
+    padding: 0.2rem 0.65rem 0.2rem 0.55rem;
+    font-size: 0.75rem;
+  }
+
+  .theme-current-name {
+    max-width: 5rem;
+  }
+
+  .theme-menu {
+    top: 3.75rem;
+    left: 0;
+    right: 0;
+    width: auto;
+    max-height: min(22rem, 60vh);
+    transform: none;
+    animation: themeMenuIn 0.16s ease both;
+  }
+
+  .theme-option {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.55rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Aksi panel input */
+  #btn-sample {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    padding: 0 0.25rem;
+  }
+
+  .clear-btn {
+    min-height: 2.75rem;
+    padding: 0 0.55rem;
+    font-size: 0.75rem;
+  }
+
+  /* Tab utama & mode input */
+  .study-tabbar {
+    width: 100%;
+  }
+
+  #btn-new {
+    min-height: 2.75rem;
+  }
+
+  .tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .tab-btn {
+    flex: 1 1 0;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.35rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .mode-tab {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  /* Baris indikator kartu/soal + kontrol kuis */
+  .meta-controls {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+    justify-content: flex-end;
+  }
+
+  .timer-btn {
+    height: 2.75rem;
+    width: 2.75rem;
+  }
+
+  .timer-icon {
+    font-size: 1rem;
+  }
+
+  .timer-menu {
+    left: 0;
+    right: auto;
+    width: min(11rem, calc(100vw - 2.5rem));
+    min-width: 0;
+  }
+
+  .timer-option {
+    min-height: 2.75rem;
+    padding: 0.55rem 0.65rem;
+    font-size: 0.8125rem;
+  }
+
+  .shuffle-btn {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .score-chip,
+  .streak-chip {
+    display: inline-flex;
+    min-height: 2rem;
+    align-items: center;
+  }
+
+  /* Navigasi flashcard */
+  .nav-btn {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    padding: 0.625rem 0.75rem;
+  }
+
+  .flip-btn {
+    min-height: 2.75rem;
+  }
+
+  /* Formulir terstruktur & foto */
+  .row-remove {
+    height: 2.75rem;
+    width: 2.75rem;
+  }
+
+  .image-btn {
+    min-height: 2.75rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.6875rem;
+  }
+
+  .image-remove {
+    top: 0.4rem;
+    right: 0.4rem;
+    height: 2.75rem;
+    width: 2.75rem;
+  }
+
+  .add-row-btn {
+    min-height: 2.75rem;
+  }
+
+  /* Cegah iOS memperbesar halaman saat input difokuskan */
+  textarea.paste-notes,
   .structured-input {
-    font-size: 0.875rem;
+    font-size: 1rem;
+  }
+
+  /* Tombol jawaban & lanjut */
+  .quiz-option,
+  .tf-choice {
+    min-height: 3.25rem;
+  }
+
+  .next-btn {
+    min-height: 2.75rem;
+  }
+}
+
+/* Target sentuh untuk perangkat berlayar sentuh, termasuk ponsel lanskap */
+@media (pointer: coarse) {
+  .lang-btn,
+  .theme-toggle,
+  .tab-btn,
+  .mode-tab,
+  .shuffle-btn,
+  .nav-btn,
+  .flip-btn,
+  .timer-btn,
+  .row-remove,
+  .image-btn,
+  .image-remove,
+  .clear-btn,
+  .add-row-btn,
+  .theme-option,
+  .timer-option,
+  .next-btn,
+  #btn-new {
+    min-height: 2.75rem;
+  }
+
+  .lang-btn,
+  .timer-btn,
+  .row-remove,
+  .image-remove {
+    min-width: 2.75rem;
+  }
+
+  button,
+  [role="button"],
+  [role="tab"] {
+    touch-action: manipulation;
+  }
+
+  textarea.paste-notes,
+  .structured-input {
+    font-size: 1rem;
+  }
+}
+
+/* Layar sangat sempit (mis. cover screen ponsel lipat) */
+@media (max-width: 300px) {
+  .lang-globe {
+    display: none;
   }
 }
 

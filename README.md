@@ -1,8 +1,8 @@
-# AI Study Buddy — v10.0 (Final Release)
+# AI Study Buddy — v10.1 (Mobile Responsiveness & Touch Optimization)
 
 Ubah catatan kuliah menjadi **flashcard 3D**, **kuis pilihan ganda**, dan **kuis True / False** langsung di browser. Tidak ada backend; semua pemrosesan berjalan lokal.
 
-Versi 10.0 adalah rilis final: seluruh fitur v9.1 tetap dipertahankan, ditambah **pemilih warna aksen** yang bisa diganti kapan saja dan diingat antar sesi.
+Versi 10.1 mempertahankan seluruh fitur v10.0 — termasuk **pemilih warna aksen**, dukungan foto, dan auto-save — sekaligus merapikan tata letak serta interaksi tombol di layar ponsel.
 
 ## Fitur
 
@@ -22,6 +22,7 @@ Versi 10.0 adalah rilis final: seluruh fitur v9.1 tetap dipertahankan, ditambah 
 - **Timer kuis interaktif** — tombol ikon jam di kiri tombol Acak pada kuis pilihan ganda dan True / False membuka pilihan durasi 5, 10, 30, atau 60 detik. Cincin melingkar di sekitar ikon menyusut sesuai sisa waktu. Timer memulai ulang penuh di setiap soal; jika waktu habis, soal dianggap salah, umpan balik ditampilkan, lalu kuis otomatis lanjut ke soal berikutnya atau ke layar hasil. Tombol Acak/Ulangi dan perpindahan tab mematikan serta mereset timer.
 - **Dua bahasa (ID/EN)** — seluruh antarmuka berganti bahasa lewat toggle di header, termasuk label formulir, tips per mode, label aksesibilitas streak, label timer, dan pesan selebrasi. Pilihan bahasa diingat.
 - **Pemilih warna aksen (v10)** — tombol palet di header, tepat di samping toggle ID/EN, membuka menu berisi 14 warna: **Biru** (default), **Merah**, **Orange**, **Hijau**, **Kuning**, **Pink**, **Hitam**, **Ungu**, **Coklat**, **Abu-abu**, **Hijau Gelap**, **Cyan**, **Teal**, dan **Zaitun**. Warna langsung diterapkan saat opsi diklik tanpa memuat ulang halaman. Yang berubah hanya warna aksen — tombol aktif, lencana, progress bar, tombol utama, tab, tautan, dan sorotan formulir — sedangkan latar putih dan warna netral tetap seperti semula. Pilihan disimpan di `localStorage` dan dipulihkan sebelum halaman selesai dimuat agar tidak berkedip. Menu mendukung klik, sentuhan, serta navigasi keyboard (panah, Home, End, Escape).
+- **Tampilan seluler & target sentuh (v10.1)** — header, toggle ID/EN, pemilih tema, indikator kartu/soal, dan kontrol kuis otomatis turun ke baris sendiri pada layar sempit tanpa saling menumpuk. Tab utama memenuhi lebar layar, tombol aksi hasil kuis tersusun vertikal, dan seluruh kontrol interaktif — unggah/hapus foto, hapus baris, opsi tema, tab, timer, navigasi kartu, serta tombol jawaban — memiliki target sentuh minimal 44 px. Menu tema dan timer dibatasi agar tetap berada di dalam viewport, dan ukuran huruf input dinaikkan saat mode seluler untuk mencegah zoom otomatis iOS.
 - **Auto-save** — catatan, formulir, dan foto tersimpan otomatis di `localStorage`, termasuk mode input yang sedang aktif. Saat halaman dibuka kembali, materi dari mode aktif dibuat ulang otomatis.
 - **Hapus semua** — tombol reset dua langkah untuk membersihkan catatan, formulir, foto, materi belajar, dan penyimpanan lokal.
 - **Ekspor & impor file** — unduh kedua mode input beserta foto dan hasil kartu/kuis sebagai JSON, lalu muat kembali file JSON atau TXT kapan saja. File ekspor v7 dan v8 tetap bisa diimpor.
@@ -42,6 +43,19 @@ Warna aksen diatur lewat tombol palet di header. Perubahan berlaku instan dan ha
 
 Preferensi disimpan di `localStorage` dengan kunci `ai-study-buddy.theme`. Skrip kecil di `<head>` menerapkan tema tersimpan sebelum stylesheet dimuat, sehingga warna tidak berkedip saat halaman dibuka kembali. Untuk kembali ke tampilan awal, pilih **Biru**.
 
+## Tampilan seluler
+
+Mulai v10.1, aplikasi tetap nyaman dipakai di ponsel Android dan iOS:
+
+- Header dan kontrolnya menjadi satu kolom penuh pada layar kecil; toggle **ID/EN**, pemilih tema, dan statistik tidak lagi bertumpuk.
+- Tab **Flashcard / Kuis / True / False** memenuhi lebar layar dengan tinggi sentuh yang cukup, dan tombol hasil kuis tersusun vertikal.
+- Tombol bahasa, tema, timer, acak, navigasi kartu, jawaban kuis, unggah foto, hapus foto, dan hapus baris memiliki target sentuh minimal 44 px.
+- Menu warna tema dan menu durasi timer diposisikan ulang serta dibatasi lebarnya agar tidak terpotong di tepi layar.
+- Kolom teks memakai ukuran huruf 16 px pada layar kecil supaya iOS tidak memperbesar halaman saat kolom difokuskan.
+- Perangkat berlayar sentuh juga mendapat target sentuh yang sama saat ponsel dipakai dalam mode lanskap.
+
+Tata letak desktop tidak berubah: dua kolom, ukuran tombol ringkas, dan seluruh fitur v10 tetap berjalan seperti sebelumnya.
+
 ## Cara menjalankan
 
 Buka `index.html` di browser. Koneksi internet diperlukan untuk Tailwind CSS (CDN) dan Google Fonts.
@@ -59,7 +73,7 @@ Lalu buka `http://127.0.0.1:8000`.
 | File | Isi |
 | --- | --- |
 | `index.html` | Struktur halaman, tab mode input, formulir soal dinamis, flashcard, kuis pilihan ganda, kuis True / False, kontrol timer, pemilih warna aksen, dan tombol penyimpanan |
-| `style.css` | Gaya kustom: token warna aksen dan 14 tema, panel, tab mode, baris formulir, kontrol foto, tombol, kartu 3D, kuis, pilihan benar/salah, streak, cincin timer, konfeti, status simpan |
+| `style.css` | Gaya kustom: token warna aksen dan 14 tema, panel, tab mode, baris formulir, kontrol foto, tombol, kartu 3D, kuis, pilihan benar/salah, streak, cincin timer, konfeti, status simpan, serta aturan responsif dan target sentuh seluler v10.1 |
 | `app.js` | Parsing catatan, formulir terstruktur, unggah dan kompresi foto, validasi, penyusunan kartu/kuis/TF, pengacakan lewat tombol Acak, timer kuis, streak, konfeti, i18n, tema aksen, auto-save, ekspor/impor |
 
 ## Format input
