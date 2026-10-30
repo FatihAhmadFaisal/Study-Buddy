@@ -1365,38 +1365,108 @@ function breakSequentialRun(targets, questions) {
    ============================================================ */
 
 /**
+ * Cocokkan setiap pernyataan salah dengan penjelasan milik istilah lain.
+ *
+ * Memakai algoritma Kuhn (pencocokan bipartit) supaya satu penjelasan hanya
+ * dipakai sebagai pengecoh satu kali. Soal yang tidak mendapat pasangan
+ * dibiarkan -1 dan nanti berubah menjadi pernyataan benar.
+ */
+function matchTfDistractors(ownKeys, definitions) {
+  const heldBy = definitions.map(() => -1);
+  const chosen = ownKeys.map(() => -1);
+
+  const tryAssign = (questionIndex, visited) => {
+    for (let valueIndex = 0; valueIndex < definitions.length; valueIndex += 1) {
+      if (visited[valueIndex]) continue;
+      if (definitions[valueIndex].key === ownKeys[questionIndex]) continue;
+
+      visited[valueIndex] = true;
+      if (heldBy[valueIndex] === -1 || tryAssign(heldBy[valueIndex], visited)) {
+        heldBy[valueIndex] = questionIndex;
+        chosen[questionIndex] = valueIndex;
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  ownKeys.forEach((_, questionIndex) => {
+    tryAssign(questionIndex, definitions.map(() => false));
+  });
+
+  return chosen;
+}
+
+/**
  * Susun pernyataan dari pasangan definisi (Istilah: penjelasan).
  *
- * Secara bawaan urutan pernyataan mengikuti urutan input dan pola benar/salah
- * dibuat bergantian secara deterministik. Opsi `{ randomize: true }` hanya
- * dipakai oleh tombol Acak untuk mengacak kombinasi dan urutan pernyataan.
+ * Jumlah pernyataan benar dan salah dibuat seimbang (selisih maksimal satu).
+ * Pernyataan salah memakai penjelasan milik istilah lain, dan setiap
+ * penjelasan hanya boleh menjadi pengecoh satu kali dalam satu sesi. Jawaban
+ * asli tetap boleh tampil pada pernyataan benarnya sendiri.
+ *
+ * Opsi `{ randomize: true }` dipakai tombol Acak untuk mengacak kombinasi,
+ * pengecoh, dan urutan pernyataan.
  */
 function buildTrueFalseQuestions(cards, { randomize = false } = {}) {
   const pairs = cards.filter((card) => card.kind === 'definition');
   if (pairs.length < 2) return [];
 
-  let flags;
+  const valueKey = (definition) => String(definition ?? '').trim().toLowerCase();
+
+  // Satu entri per penjelasan unik. Bila beberapa istilah berbagi penjelasan
+  // yang sama, istilah pertama dipakai sebagai pemilik untuk feedback.
+  const definitions = [];
+  const seenDefinitions = new Set();
+  pairs.forEach((pair) => {
+    const key = valueKey(pair.definition);
+    if (seenDefinitions.has(key)) return;
+    seenDefinitions.add(key);
+    definitions.push({ key, definition: pair.definition, term: pair.term });
+  });
+
+  // Pola benar/salah seimbang: 2 soal -> 1 benar, 3 soal -> 2 benar, dst.
+  const trueTarget = Math.ceil(pairs.length / 2);
+  const falseTarget = pairs.length - trueTarget;
+
+  // Cari pengecoh unik untuk semua soal lebih dulu (bukan hanya soal yang
+  // sudah ditandai salah), lalu pilih soal mana yang tampil sebagai salah.
+  // Dengan begitu soal yang punya pengecoh tetap bisa menyeimbangkan jumlah
+  // Benar/Salah walau ada penjelasan yang kembar.
+  const pool = randomize ? shuffleArray(definitions) : definitions;
+  const chosen = matchTfDistractors(
+    pairs.map((pair) => valueKey(pair.definition)),
+    pool,
+  );
+  const matched = pairs.map((_, index) => index).filter((index) => chosen[index] >= 0);
+
+  let falseIndexes;
 
   if (randomize) {
-    const wantsTrue = pairs.map(() => Math.random() < 0.5);
-
-    if (pairs.length >= 3) {
-      let trueCount = wantsTrue.filter(Boolean).length;
-      for (let i = 0; trueCount < 2 && i < wantsTrue.length; i += 1) {
-        if (!wantsTrue[i]) {
-          wantsTrue[i] = true;
-          trueCount += 1;
-        }
-      }
-    }
-
-    flags = shuffleArray(wantsTrue);
+    falseIndexes = shuffleArray(matched).slice(0, falseTarget);
   } else {
-    flags = pairs.map((_, index) => index % 2 === 0);
+    // Pola bawaan: soal ke-2, ke-4, dst. menjadi pernyataan salah.
+    falseIndexes = matched
+      .filter((index) => index % 2 === 1)
+      .slice(0, falseTarget);
+
+    if (falseIndexes.length < falseTarget) {
+      const filler = matched.filter((index) => !falseIndexes.includes(index));
+      falseIndexes = falseIndexes.concat(filler.slice(0, falseTarget - falseIndexes.length));
+    }
   }
 
+  const mismatches = new Map();
+  falseIndexes.forEach((pairIndex) => {
+    mismatches.set(pairIndex, pool[chosen[pairIndex]]);
+  });
+
   const questions = pairs.map((pair, index) => {
-    if (flags[index]) {
+    const mismatch = mismatches.get(index);
+
+    // Tidak ada penjelasan lain yang tersisa, jadi tampilkan pasangan aslinya.
+    if (!mismatch) {
       return {
         term: pair.term,
         definition: pair.definition,
@@ -1406,33 +1476,12 @@ function buildTrueFalseQuestions(cards, { randomize = false } = {}) {
         correct: undefined,
       };
     }
-
-    // Pernyataan FALSE memakai penjelasan milik istilah lain.
-    const others = pairs.filter(
-      (item) => item !== pair
-        && item.definition.trim().toLowerCase() !== pair.definition.trim().toLowerCase(),
-    );
-
-    if (others.length === 0) {
-      return {
-        term: pair.term,
-        definition: pair.definition,
-        isTrue: true,
-        correctTerm: pair.term,
-        selected: undefined,
-        correct: undefined,
-      };
-    }
-
-    const other = randomize
-      ? others[Math.floor(Math.random() * others.length)]
-      : others[0];
 
     return {
       term: pair.term,
-      definition: other.definition,
+      definition: mismatch.definition,
       isTrue: false,
-      correctTerm: other.term,
+      correctTerm: mismatch.term,
       selected: undefined,
       correct: undefined,
     };
