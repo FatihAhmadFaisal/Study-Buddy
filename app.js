@@ -144,6 +144,26 @@ const SAMPLE_STRUCTURED_EN = [
 
 const STORAGE_KEY = 'ai-study-buddy.lang';
 const NOTES_KEY = 'ai-study-buddy.notes';
+const THEME_KEY = 'ai-study-buddy.theme';
+const DEFAULT_THEME = 'blue';
+
+// Palet aksen v10. Urutan di sini sama dengan urutan pada menu.
+const THEMES = [
+  { id: 'blue', swatch: '#4f46e5' },
+  { id: 'red', swatch: '#dc2626' },
+  { id: 'orange', swatch: '#f97316' },
+  { id: 'green', swatch: '#15803d' },
+  { id: 'yellow', swatch: '#eab308' },
+  { id: 'pink', swatch: '#db2777' },
+  { id: 'black', swatch: '#111827' },
+  { id: 'purple', swatch: '#9333ea' },
+  { id: 'brown', swatch: '#92400e' },
+  { id: 'gray', swatch: '#475569' },
+  { id: 'dark-green', swatch: '#166534' },
+  { id: 'cyan', swatch: '#06b6d4' },
+  { id: 'teal', swatch: '#0f766e' },
+  { id: 'olive', swatch: '#556b2f' },
+];
 const MAX_IMPORT_BYTES = 12 * 1024 * 1024;
 const STORAGE_VERSION = 5;
 const EXPORT_VERSION = 9;
@@ -169,6 +189,22 @@ const TRANSLATIONS = {
     'app.meta': 'Ubah catatan kuliah menjadi flashcard interaktif dan kuis pilihan ganda secara instan.',
     'app.subtitle': 'Catatan kuliah jadi flashcard & kuis dalam sekejap.',
     'app.footer': 'Dibuat untuk belajar lebih cepat. Semua materi diproses langsung di browser.',
+
+    'theme.title': 'Warna aksen',
+    'theme.blue': 'Biru',
+    'theme.red': 'Merah',
+    'theme.orange': 'Orange',
+    'theme.green': 'Hijau',
+    'theme.yellow': 'Kuning',
+    'theme.pink': 'Pink',
+    'theme.black': 'Hitam',
+    'theme.purple': 'Ungu',
+    'theme.brown': 'Coklat',
+    'theme.gray': 'Abu-abu',
+    'theme.dark-green': 'Hijau Gelap',
+    'theme.cyan': 'Cyan',
+    'theme.teal': 'Teal',
+    'theme.olive': 'Zaitun',
 
     'stats.cards': '{n} kartu',
     'stats.questions': '{n} soal',
@@ -343,6 +379,22 @@ const TRANSLATIONS = {
     'app.meta': 'Turn your lecture notes into interactive flashcards and multiple-choice quizzes instantly.',
     'app.subtitle': 'Turn your lecture notes into flashcards & quizzes in seconds.',
     'app.footer': 'Built for faster studying. Everything is processed right in your browser.',
+
+    'theme.title': 'Accent color',
+    'theme.blue': 'Blue',
+    'theme.red': 'Red',
+    'theme.orange': 'Orange',
+    'theme.green': 'Green',
+    'theme.yellow': 'Yellow',
+    'theme.pink': 'Pink',
+    'theme.black': 'Black',
+    'theme.purple': 'Purple',
+    'theme.brown': 'Brown',
+    'theme.gray': 'Gray',
+    'theme.dark-green': 'Dark Green',
+    'theme.cyan': 'Cyan',
+    'theme.teal': 'Teal',
+    'theme.olive': 'Olive',
 
     'stats.cards': '{n} cards',
     'stats.questions': '{n} questions',
@@ -523,7 +575,18 @@ function loadLanguage() {
   return 'id';
 }
 
+function loadTheme() {
+  try {
+    const saved = window.localStorage.getItem(THEME_KEY);
+    if (saved && THEMES.some((theme) => theme.id === saved)) return saved;
+  } catch (error) {
+    // localStorage bisa diblokir; abaikan dan pakai tema default.
+  }
+  return DEFAULT_THEME;
+}
+
 let lang = loadLanguage();
+let currentTheme = loadTheme();
 
 function t(key, values = {}) {
   const dictionary = TRANSLATIONS[lang] || TRANSLATIONS.id;
@@ -597,6 +660,14 @@ const els = {
   studyPanels: $('#study-panels'),
   tabButtons: Array.from(document.querySelectorAll('.tab-btn')),
   langButtons: Array.from(document.querySelectorAll('.lang-btn')),
+
+  themePicker: $('#theme-picker'),
+  themeToggle: $('#theme-toggle'),
+  themeMenu: $('#theme-menu'),
+  themeOptions: $('#theme-options'),
+  themeCurrentName: $('#theme-current-name'),
+  themeCurrentSwatch: $('#theme-current-swatch'),
+
   tabCards: $('#tab-cards'),
   tabQuiz: $('#tab-quiz'),
   tabTf: $('#tab-tf'),
@@ -3100,6 +3171,181 @@ function renderWorkspace() {
 }
 
 /* ============================================================
+   Tema warna aksen (v10.0)
+   ============================================================ */
+
+let themeMenuOpen = false;
+
+function getThemeOptionButtons() {
+  if (!els.themeOptions) return [];
+  return Array.from(els.themeOptions.querySelectorAll('.theme-option'));
+}
+
+function focusThemeOption(button) {
+  if (!button) return;
+  getThemeOptionButtons().forEach((option) => {
+    option.tabIndex = -1;
+  });
+  button.tabIndex = 0;
+  button.focus();
+}
+
+function refreshThemeUi() {
+  const theme = THEMES.find((item) => item.id === currentTheme) || THEMES[0];
+
+  if (els.themeCurrentSwatch) {
+    els.themeCurrentSwatch.style.setProperty('--swatch', theme.swatch);
+  }
+
+  if (els.themeCurrentName) {
+    els.themeCurrentName.textContent = t(`theme.${theme.id}`);
+  }
+
+  if (els.themeToggle) {
+    const label = t('theme.title');
+    els.themeToggle.title = label;
+    els.themeToggle.setAttribute('aria-label', label);
+  }
+
+  if (els.themeOptions) {
+    els.themeOptions.setAttribute('aria-label', t('theme.title'));
+    getThemeOptionButtons().forEach((option) => {
+      const isSelected = option.dataset.theme === currentTheme;
+      const name = option.querySelector('.theme-name');
+      if (name) name.textContent = t(`theme.${option.dataset.theme}`);
+      option.classList.toggle('is-selected', isSelected);
+      option.setAttribute('aria-selected', String(isSelected));
+      option.tabIndex = isSelected ? 0 : -1;
+    });
+  }
+}
+
+function applyTheme(themeId, options = {}) {
+  const { persist = true } = options;
+  const theme = THEMES.find((item) => item.id === themeId);
+  currentTheme = theme ? theme.id : DEFAULT_THEME;
+
+  document.documentElement.dataset.theme = currentTheme;
+  refreshThemeUi();
+
+  if (persist) {
+    try {
+      window.localStorage.setItem(THEME_KEY, currentTheme);
+    } catch (error) {
+      // Penyimpanan diblokir: tema hanya berlaku untuk sesi ini.
+    }
+  }
+}
+
+function buildThemeOptions() {
+  if (!els.themeOptions) return;
+
+  els.themeOptions.innerHTML = '';
+  THEMES.forEach((theme) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'theme-option';
+    option.dataset.theme = theme.id;
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', 'false');
+    option.tabIndex = -1;
+
+    const dot = document.createElement('span');
+    dot.className = 'theme-dot';
+    dot.style.setProperty('--swatch', theme.swatch);
+    dot.setAttribute('aria-hidden', 'true');
+
+    const name = document.createElement('span');
+    name.className = 'theme-name';
+
+    const check = document.createElement('span');
+    check.className = 'theme-check';
+    check.setAttribute('aria-hidden', 'true');
+    check.textContent = '\u2713';
+
+    option.append(dot, name, check);
+    option.addEventListener('click', () => {
+      applyTheme(theme.id);
+      closeThemeMenu({ focusToggle: true });
+    });
+
+    els.themeOptions.append(option);
+  });
+}
+
+function openThemeMenu(position = 'selected') {
+  if (!els.themeMenu || !els.themeToggle) return;
+
+  const options = getThemeOptionButtons();
+  if (options.length === 0) return;
+
+  els.themeMenu.hidden = false;
+  els.themeMenu.classList.add('is-open');
+  els.themeToggle.setAttribute('aria-expanded', 'true');
+  themeMenuOpen = true;
+
+  let index = options.findIndex((option) => option.dataset.theme === currentTheme);
+  if (index < 0) index = 0;
+  if (position === 'last') index = options.length - 1;
+
+  focusThemeOption(options[index]);
+}
+
+function closeThemeMenu(options = {}) {
+  const { focusToggle = false } = options;
+  if (!els.themeMenu || !els.themeToggle) return;
+
+  els.themeMenu.hidden = true;
+  els.themeMenu.classList.remove('is-open');
+  els.themeToggle.setAttribute('aria-expanded', 'false');
+  themeMenuOpen = false;
+
+  if (focusToggle) els.themeToggle.focus();
+}
+
+function toggleThemeMenu() {
+  if (themeMenuOpen) {
+    closeThemeMenu({ focusToggle: true });
+  } else {
+    openThemeMenu();
+  }
+}
+
+function handleThemeMenuKeydown(event) {
+  const options = getThemeOptionButtons();
+  if (options.length === 0) return;
+
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeThemeMenu({ focusToggle: true });
+    return;
+  }
+
+  if (event.key === 'Tab') {
+    closeThemeMenu();
+    return;
+  }
+
+  const currentIndex = options.indexOf(document.activeElement);
+  let nextIndex = -1;
+
+  if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % options.length;
+  } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+    nextIndex = currentIndex <= 0 ? options.length - 1 : currentIndex - 1;
+  } else if (event.key === 'Home') {
+    nextIndex = 0;
+  } else if (event.key === 'End') {
+    nextIndex = options.length - 1;
+  }
+
+  if (nextIndex >= 0) {
+    event.preventDefault();
+    focusThemeOption(options[nextIndex]);
+  }
+}
+
+/* ============================================================
    Bahasa
    ============================================================ */
 
@@ -3133,6 +3379,8 @@ function applyLanguage(nextLang, options = {}) {
     button.classList.toggle('is-active', isActive);
     button.setAttribute('aria-pressed', String(isActive));
   });
+
+  refreshThemeUi();
 
   disarmClear();
   clearHint();
@@ -3964,6 +4212,32 @@ els.langButtons.forEach((button) => {
   });
 });
 
+if (els.themeToggle) {
+  els.themeToggle.addEventListener('click', toggleThemeMenu);
+  els.themeToggle.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      openThemeMenu('selected');
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      openThemeMenu('last');
+    } else if (event.key === 'Escape' && themeMenuOpen) {
+      event.preventDefault();
+      closeThemeMenu({ focusToggle: true });
+    }
+  });
+}
+
+if (els.themeMenu) {
+  els.themeMenu.addEventListener('keydown', handleThemeMenuKeydown);
+}
+
+document.addEventListener('click', (event) => {
+  const target = event.target;
+  if (target instanceof Element && target.closest('.theme-picker')) return;
+  if (themeMenuOpen) closeThemeMenu();
+});
+
 /* ============================================================
    Gulir area input dengan panah atas/bawah (v8.4)
    ============================================================ */
@@ -4022,6 +4296,7 @@ document.addEventListener('keydown', (event) => {
   if (event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.key === 'Escape' && closeAllTimerMenus({ restoreFocus: true })) return;
   if (isTimerMenuOpen()) return;
+  if (themeMenuOpen) return;
   if (handleInputAreaScroll(event)) return;
 
   const tag = (document.activeElement?.tagName || '').toLowerCase();
@@ -4096,5 +4371,7 @@ renderStructuredRows();
 setInputMode('paste', { persist: false });
 updateCounters();
 renderWorkspace();
+buildThemeOptions();
+applyTheme(currentTheme, { persist: false });
 applyLanguage(lang, { persist: false });
 restoreSavedInput();

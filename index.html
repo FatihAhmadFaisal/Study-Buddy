@@ -6,6 +6,17 @@
   <title>AI Study Buddy — Catatan Jadi Flashcard &amp; Kuis</title>
   <meta name="description" content="Ubah catatan kuliah menjadi flashcard interaktif dan kuis pilihan ganda secara instan." />
 
+  <script>
+    (function () {
+      try {
+        var savedTheme = window.localStorage.getItem('ai-study-buddy.theme');
+        if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+      } catch (error) {
+        // Preferensi tema tidak tersedia; pakai warna default.
+      }
+    })();
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -31,16 +42,16 @@
 <body class="min-h-screen bg-[#f6f7fc] font-sans text-slate-800 antialiased">
   <!-- Dekorasi latar -->
   <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-    <div class="absolute -left-28 -top-32 h-80 w-80 rounded-full bg-indigo-300/30 blur-3xl"></div>
-    <div class="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-violet-300/25 blur-3xl"></div>
-    <div class="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-sky-200/20 blur-3xl"></div>
+    <div class="deco-blob absolute -left-28 -top-32 h-80 w-80 rounded-full blur-3xl"></div>
+    <div class="deco-blob is-soft absolute -right-24 top-1/3 h-96 w-96 rounded-full blur-3xl"></div>
+    <div class="deco-blob is-soft absolute bottom-0 left-1/3 h-72 w-72 rounded-full blur-3xl"></div>
   </div>
 
   <header class="mx-auto max-w-6xl px-5 pt-8 sm:pt-10">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <div
-          class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30"
+          class="brand-logo grid h-12 w-12 place-items-center rounded-2xl"
         >
           <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
             <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3Z" stroke-linejoin="round" />
@@ -67,6 +78,40 @@
           </button>
         </div>
 
+        <div class="theme-picker" id="theme-picker">
+          <button
+            id="theme-toggle"
+            type="button"
+            class="theme-toggle"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="theme-menu"
+            title="Warna aksen"
+          >
+            <svg class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M12 3a9 9 0 0 0 0 18h1.6a2.4 2.4 0 0 0 0-4.8h-.8a2.2 2.2 0 0 1 0-4.4H17a4 4 0 0 0 4-4c0-2.65-4.03-4.8-9-4.8Z" stroke-linejoin="round" />
+              <circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
+              <circle cx="10" cy="7" r="1" fill="currentColor" stroke="none" />
+              <circle cx="14" cy="7" r="1" fill="currentColor" stroke="none" />
+            </svg>
+            <span id="theme-current-swatch" class="theme-current-swatch" style="--swatch: #4f46e5" aria-hidden="true"></span>
+            <span id="theme-current-name" class="theme-current-name">Biru</span>
+            <svg class="theme-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div id="theme-menu" class="theme-menu" hidden>
+            <p class="theme-menu-title" data-i18n="theme.title">Warna aksen</p>
+            <div
+              id="theme-options"
+              class="theme-options"
+              role="listbox"
+              aria-label="Warna aksen"
+              data-i18n-aria="theme.title"
+            ></div>
+          </div>
+        </div>
+
         <div id="stats" class="flex items-center gap-2">
           <span id="stat-cards" class="stat-pill">0 kartu</span>
           <span id="stat-quiz" class="stat-pill">0 soal</span>
@@ -81,7 +126,7 @@
       <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <h2 class="text-base font-bold text-slate-900" data-i18n="input.title">1. Masukkan materimu</h2>
         <div class="ml-auto flex items-center gap-2">
-          <button id="btn-sample" type="button" class="text-xs font-bold text-indigo-600 transition hover:text-indigo-800 hover:underline" data-i18n="input.sample">
+          <button id="btn-sample" type="button" class="accent-link text-xs font-bold transition hover:underline" data-i18n="input.sample">
             Pakai contoh
           </button>
           <span class="h-3.5 w-px bg-slate-200" aria-hidden="true"></span>
@@ -138,7 +183,7 @@
           id="notes"
           rows="12"
           spellcheck="false"
-          class="paste-notes mt-3 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-relaxed text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+          class="paste-notes mt-3 w-full resize-y rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-relaxed text-slate-700 outline-none transition placeholder:text-slate-400"
           data-i18n-placeholder="input.placeholder"
           placeholder="Contoh:&#10;Overfitting terjadi ketika model terlalu hafal data latih.&#10;Neural network: jaringan saraf tiruan berlapis.&#10;Gradient descent adalah algoritma optimasi bobot."
         ></textarea>
@@ -235,7 +280,7 @@
     <section class="min-h-[520px]">
       <!-- Keadaan kosong -->
       <div id="study-empty" class="empty-state">
-        <div class="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 text-indigo-600">
+        <div class="feature-icon grid h-16 w-16 place-items-center rounded-2xl">
           <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
             <rect x="3" y="5" width="13" height="15" rx="2.5" />
             <path d="M8 5V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-1" stroke-linecap="round" />
@@ -250,15 +295,15 @@
 
         <div class="mt-6 grid w-full max-w-sm gap-2 text-left text-sm">
           <div class="flex items-start gap-3 rounded-xl bg-white/80 px-4 py-3 ring-1 ring-slate-200/70">
-            <span class="mt-0.5 text-indigo-500">◆</span>
+            <span class="accent-mark mt-0.5">◆</span>
             <span data-i18n-html="empty.f1"><strong class="font-semibold text-slate-700">Flashcard 3D.</strong> Klik kartu untuk membalik.</span>
           </div>
           <div class="flex items-start gap-3 rounded-xl bg-white/80 px-4 py-3 ring-1 ring-slate-200/70">
-            <span class="mt-0.5 text-indigo-500">◆</span>
+            <span class="accent-mark mt-0.5">◆</span>
             <span data-i18n-html="empty.f2"><strong class="font-semibold text-slate-700">Kuis pilihan ganda.</strong> Lengkap dengan pembahasan.</span>
           </div>
           <div class="flex items-start gap-3 rounded-xl bg-white/80 px-4 py-3 ring-1 ring-slate-200/70">
-            <span class="mt-0.5 text-indigo-500">◆</span>
+            <span class="accent-mark mt-0.5">◆</span>
             <span data-i18n-html="empty.f3"><strong class="font-semibold text-slate-700">Skor otomatis.</strong> Pantau hasil belajarmu.</span>
           </div>
         </div>
@@ -366,7 +411,7 @@
                   <div class="flip-face flip-back">
                     <div class="flex items-center justify-between gap-3">
                       <span class="card-badge card-badge-light" data-i18n="card.answerBadge">Jawaban</span>
-                      <span class="text-xs font-bold text-white/40">#<span id="card-number-back">1</span></span>
+                      <span class="card-number-light text-xs font-bold">#<span id="card-number-back">1</span></span>
                     </div>
                     <div id="card-back" class="card-content"></div>
                     <p class="card-hint card-hint-light" data-i18n="card.back">Klik untuk kembali</p>
@@ -472,7 +517,7 @@
           </div>
 
           <div id="quiz-result" class="panel hidden p-6 text-center sm:p-10">
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-500" data-i18n="quiz.resultLabel">Hasil kuis</p>
+            <p class="accent-label text-xs font-bold uppercase tracking-[0.18em]" data-i18n="quiz.resultLabel">Hasil kuis</p>
             <div id="result-ring" class="score-ring mx-auto mt-5">
               <span id="result-percent">0%</span>
             </div>
@@ -560,7 +605,7 @@
             <div class="progress-track mt-3"><div id="tf-progress" class="progress-bar"></div></div>
 
             <div class="mt-6">
-              <p class="text-[11px] font-extrabold uppercase tracking-[0.16em] text-indigo-500" data-i18n="tf.statementLabel">Pernyataan</p>
+              <p class="accent-label text-[11px] font-extrabold uppercase tracking-[0.16em]" data-i18n="tf.statementLabel">Pernyataan</p>
               <div class="tf-statement mt-2">
                 <p id="tf-term" class="tf-term"></p>
                 <p id="tf-definition" class="tf-definition"></p>
@@ -591,7 +636,7 @@
           </div>
 
           <div id="tf-result" class="panel hidden p-6 text-center sm:p-10">
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-500" data-i18n="tf.resultLabel">Hasil True / False</p>
+            <p class="accent-label text-xs font-bold uppercase tracking-[0.18em]" data-i18n="tf.resultLabel">Hasil True / False</p>
             <div id="tf-result-ring" class="score-ring mx-auto mt-5">
               <span id="tf-result-percent">0%</span>
             </div>

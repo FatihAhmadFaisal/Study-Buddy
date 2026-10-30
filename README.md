@@ -1,6 +1,8 @@
-# AI Study Buddy — v9.1
+# AI Study Buddy — v10.0 (Final Release)
 
 Ubah catatan kuliah menjadi **flashcard 3D**, **kuis pilihan ganda**, dan **kuis True / False** langsung di browser. Tidak ada backend; semua pemrosesan berjalan lokal.
+
+Versi 10.0 adalah rilis final: seluruh fitur v9.1 tetap dipertahankan, ditambah **pemilih warna aksen** yang bisa diganti kapan saja dan diingat antar sesi.
 
 ## Fitur
 
@@ -15,13 +17,30 @@ Ubah catatan kuliah menjadi **flashcard 3D**, **kuis pilihan ganda**, dan **kuis
 - **Pengecoh T/F unik** — satu penjelasan tidak bisa menjadi pasangan salah dua kali dalam sesi T/F yang sama. Bila tidak ada penjelasan lain yang tersisa, soal otomatis tampil sebagai pernyataan benar. Jumlah pernyataan Benar dan Salah juga dijaga hampir seimbang, dengan selisih maksimal satu pernyataan.
 - **Streak & konfeti** — kuis pilihan ganda dan True / False menampilkan indikator api 🔥 saat jawaban benar beruntun mencapai 2 atau lebih. Streak kembali ke 0 saat jawaban salah, kuis direset/diacak, atau kuis selesai. Skor akhir minimal 80% memicu animasi konfeti di layar hasil.
 - **Acak kartu & kuis** — tombol shuffle mengacak urutan flashcard. Pada kuis pilihan ganda dan True / False, materi yang baru dibuat atau diulang tetap memakai urutan input. Urutan soal, susunan opsi, dan kombinasi T/F diacak penuh hanya saat tombol **Acak** diklik; khusus MCQ, posisi jawaban benar tetap diacak setiap kali kuis disusun. Progres (skor, jawaban, indeks, streak) direset, lalu kuis dimulai dari soal pertama.
-- **Pintasan lanjut soal** — setelah menjawab soal pilihan ganda atau True / False, tekan **→** (`ArrowRight`) untuk langsung lanjut tanpa mengklik tombol Next. Hanya panah kanan yang memicu aksi ini; panah kiri/atas/bawah dan tombol lain tidak melompatkan soal. Pintasan nonaktif sebelum jawaban dipilih, saat mengetik di kolom input, atau saat menu timer terbuka.
+- **Pintasan lanjut soal** — setelah menjawab soal pilihan ganda atau True / False, tekan **→** (`ArrowRight`) untuk langsung lanjut tanpa mengklik tombol Next. Hanya panah kanan yang memicu aksi ini; panah kiri/atas/bawah dan tombol lain tidak melompatkan soal. Pintasan nonaktif sebelum jawaban dipilih, saat mengetik di kolom input, atau saat menu timer/tema terbuka.
 - **Gulir area input dengan keyboard** — klik area **Tempel Teks** atau **Formulir Soal** (termasuk kotak teks dan kolom isian di dalamnya), lalu tekan **↑** / **↓** untuk menggulir isi area secara mulus ketika materinya panjang. Panah atas/bawah hanya bekerja di area input yang sedang aktif dan tidak mengganggu navigasi flashcard maupun pintasan **→** di kuis. Di dalam kotak teks, kursor tetap bisa dipindah lewat klik, Home/End, atau Shift + panah.
 - **Timer kuis interaktif** — tombol ikon jam di kiri tombol Acak pada kuis pilihan ganda dan True / False membuka pilihan durasi 5, 10, 30, atau 60 detik. Cincin melingkar di sekitar ikon menyusut sesuai sisa waktu. Timer memulai ulang penuh di setiap soal; jika waktu habis, soal dianggap salah, umpan balik ditampilkan, lalu kuis otomatis lanjut ke soal berikutnya atau ke layar hasil. Tombol Acak/Ulangi dan perpindahan tab mematikan serta mereset timer.
 - **Dua bahasa (ID/EN)** — seluruh antarmuka berganti bahasa lewat toggle di header, termasuk label formulir, tips per mode, label aksesibilitas streak, label timer, dan pesan selebrasi. Pilihan bahasa diingat.
+- **Pemilih warna aksen (v10)** — tombol palet di header, tepat di samping toggle ID/EN, membuka menu berisi 14 warna: **Biru** (default), **Merah**, **Orange**, **Hijau**, **Kuning**, **Pink**, **Hitam**, **Ungu**, **Coklat**, **Abu-abu**, **Hijau Gelap**, **Cyan**, **Teal**, dan **Zaitun**. Warna langsung diterapkan saat opsi diklik tanpa memuat ulang halaman. Yang berubah hanya warna aksen — tombol aktif, lencana, progress bar, tombol utama, tab, tautan, dan sorotan formulir — sedangkan latar putih dan warna netral tetap seperti semula. Pilihan disimpan di `localStorage` dan dipulihkan sebelum halaman selesai dimuat agar tidak berkedip. Menu mendukung klik, sentuhan, serta navigasi keyboard (panah, Home, End, Escape).
 - **Auto-save** — catatan, formulir, dan foto tersimpan otomatis di `localStorage`, termasuk mode input yang sedang aktif. Saat halaman dibuka kembali, materi dari mode aktif dibuat ulang otomatis.
 - **Hapus semua** — tombol reset dua langkah untuk membersihkan catatan, formulir, foto, materi belajar, dan penyimpanan lokal.
 - **Ekspor & impor file** — unduh kedua mode input beserta foto dan hasil kartu/kuis sebagai JSON, lalu muat kembali file JSON atau TXT kapan saja. File ekspor v7 dan v8 tetap bisa diimpor.
+
+## Tema warna aksen
+
+Warna aksen diatur lewat tombol palet di header. Perubahan berlaku instan dan hanya menyentuh elemen beraksen, bukan latar utama:
+
+| Nama | ID tema | Nama | ID tema |
+| --- | --- | --- | --- |
+| Biru (default) | `blue` | Coklat | `brown` |
+| Merah | `red` | Abu-abu | `gray` |
+| Orange | `orange` | Hijau Gelap | `dark-green` |
+| Hijau | `green` | Cyan | `cyan` |
+| Kuning | `yellow` | Teal | `teal` |
+| Pink | `pink` | Zaitun | `olive` |
+| Hitam | `black` | Ungu | `purple` |
+
+Preferensi disimpan di `localStorage` dengan kunci `ai-study-buddy.theme`. Skrip kecil di `<head>` menerapkan tema tersimpan sebelum stylesheet dimuat, sehingga warna tidak berkedip saat halaman dibuka kembali. Untuk kembali ke tampilan awal, pilih **Biru**.
 
 ## Cara menjalankan
 
@@ -39,9 +58,9 @@ Lalu buka `http://127.0.0.1:8000`.
 
 | File | Isi |
 | --- | --- |
-| `index.html` | Struktur halaman, tab mode input, formulir soal dinamis, flashcard, kuis pilihan ganda, kuis True / False, kontrol timer, dan tombol penyimpanan |
-| `style.css` | Gaya kustom: panel, tab mode, baris formulir, kontrol foto, tombol, kartu 3D, kuis, pilihan benar/salah, streak, cincin timer, konfeti, status simpan |
-| `app.js` | Parsing catatan, formulir terstruktur, unggah dan kompresi foto, validasi, penyusunan kartu/kuis/TF, pengacakan lewat tombol Acak, timer kuis, streak, konfeti, i18n, auto-save, ekspor/impor |
+| `index.html` | Struktur halaman, tab mode input, formulir soal dinamis, flashcard, kuis pilihan ganda, kuis True / False, kontrol timer, pemilih warna aksen, dan tombol penyimpanan |
+| `style.css` | Gaya kustom: token warna aksen dan 14 tema, panel, tab mode, baris formulir, kontrol foto, tombol, kartu 3D, kuis, pilihan benar/salah, streak, cincin timer, konfeti, status simpan |
+| `app.js` | Parsing catatan, formulir terstruktur, unggah dan kompresi foto, validasi, penyusunan kartu/kuis/TF, pengacakan lewat tombol Acak, timer kuis, streak, konfeti, i18n, tema aksen, auto-save, ekspor/impor |
 
 ## Format input
 
@@ -91,6 +110,7 @@ Aturan yang berlaku:
   - `notes`: isi mode tempel teks
   - `structured`: array `{ term, explanation, termImage, explanationImage }`; field gambar berisi data URL Base64 atau string kosong
 - `ai-study-buddy.lang` — preferensi bahasa (`id` atau `en`)
+- `ai-study-buddy.theme` — preferensi warna aksen (`blue`, `red`, `orange`, `green`, `yellow`, `pink`, `black`, `purple`, `brown`, `gray`, `dark-green`, `cyan`, `teal`, atau `olive`)
 
 File ekspor memakai skema **versi 9** dan berisi `inputMode`, `notes`, `structured`, `cards`, `quiz`, `trueFalse`, serta `summary` (jumlah kartu/soal, jawaban terisi, skor, jumlah soal True / False, dan jumlah baris terstruktur yang lengkap). Setiap kartu, soal, opsi, dan pernyataan T/F menyertakan foto (`termImage`, `definitionImage`, `noteImage`, `correctTermImage`) bila ada. Setiap kartu menyertakan `sourceMode` (`paste` atau `structured`), dan setiap soal kuis menyertakan status `timedOut`. Ukuran file impor maksimal 12 MB agar ekspor berisi beberapa foto tetap bisa dimuat.
 
