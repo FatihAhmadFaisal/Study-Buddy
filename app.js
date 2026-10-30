@@ -144,11 +144,19 @@ const SAMPLE_STRUCTURED_EN = [
 
 const STORAGE_KEY = 'ai-study-buddy.lang';
 const NOTES_KEY = 'ai-study-buddy.notes';
-const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
-const STORAGE_VERSION = 4;
-const EXPORT_VERSION = 8;
+const MAX_IMPORT_BYTES = 12 * 1024 * 1024;
+const STORAGE_VERSION = 5;
+const EXPORT_VERSION = 9;
 const MAX_STRUCTURED_ROWS = 100;
 const MIN_STRUCTURED_ROWS = 2;
+
+// Batas gambar: sumber boleh besar, tetapi hasil kompresi dijaga kecil agar
+// localStorage tidak cepat penuh.
+const MAX_IMAGE_SOURCE_BYTES = 12 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 1024;
+const IMAGE_JPEG_QUALITY = 0.72;
+const IMAGE_TARGET_BYTES = 180 * 1024;
+const MAX_IMAGE_DATA_URL_LENGTH = 400 * 1024;
 
 // Validasi catatan memakai jumlah huruf/angka, bukan jumlah kata, agar
 // pasangan singkat seperti "DB: Basis data" tetap bisa diolah.
@@ -191,9 +199,22 @@ const TRANSLATIONS = {
     'structured.explanationPlaceholder': 'Contoh: Model terlalu hafal data latih sehingga buruk pada data baru.',
     'structured.remove': 'Hapus soal {n}',
     'structured.count': '{complete} dari {total} soal lengkap',
+    'structured.imageAdd': 'Foto',
+    'structured.imageChange': 'Ganti foto',
+    'structured.imageRemove': 'Hapus foto',
+    'structured.imageAddAria': 'Tambahkan foto untuk {field} soal {n}',
+    'structured.imageChangeAria': 'Ganti foto untuk {field} soal {n}',
+    'structured.imageRemoveAria': 'Hapus foto dari {field} soal {n}',
+    'structured.imageFieldTerm': 'istilah',
+    'structured.imageFieldExplanation': 'penjelasan',
+    'structured.imageProcessing': 'Memproses…',
+    'structured.imageErrorType': 'File harus berupa gambar (JPG, PNG, atau WebP).',
+    'structured.imageErrorSize': 'Gambar terlalu besar. Maksimal 12 MB.',
+    'structured.imageErrorRead': 'Gambar tidak bisa diproses. Coba file lain.',
+    'structured.imageTermLabel': 'Soal bergambar {n}',
     'structured.errorMin': 'Isi minimal dua baris lengkap: istilah dan penjelasan.',
-    'structured.errorIncomplete': 'Soal {n} belum lengkap. Isi istilah dan penjelasannya, atau kosongkan baris itu.',
-    'structured.errorDuplicateTerm': 'Istilah “{term}” dipakai lebih dari sekali. Gunakan istilah yang unik.',
+    'structured.errorIncomplete': 'Soal {n} belum lengkap. Isi istilah dan penjelasannya (teks atau foto), atau kosongkan baris itu.',
+    'structured.errorDuplicateQuestion': 'Soal {first} dan {second} identik: istilah dan jawabannya sama. Ubah foto atau jawabannya agar berbeda.',
     'structured.errorEmpty': 'Formulir masih kosong. Tambahkan minimal dua soal lengkap, ya.',
     'structured.errorMax': 'Maksimal {n} soal dalam satu formulir.',
 
@@ -204,8 +225,9 @@ const TRANSLATIONS = {
     'tips.four': 'Catatan tersimpan otomatis di browser ini.',
     'structured.tips.one': 'Setiap baris lengkap menjadi <strong>kartu definisi</strong>, soal MCQ, dan pernyataan T/F.',
     'structured.tips.two': 'Isi minimal <strong>dua baris lengkap</strong>: istilah dan penjelasan.',
-    'structured.tips.three': 'Gunakan istilah yang unik; penjelasan boleh sama antar soal.',
-    'structured.tips.four': 'Data formulir tersimpan otomatis di browser ini.',
+    'structured.tips.three': 'Istilah boleh sama asalkan foto atau jawabannya berbeda; hanya soal yang benar-benar kembar yang ditolak.',
+    'structured.tips.four': 'Setiap kotak bisa berisi teks, foto, atau keduanya. Foto dikompres otomatis.',
+    'structured.tips.five': 'Data formulir dan fotonya tersimpan otomatis di browser ini.',
 
     'storage.clear': 'Hapus semua',
     'storage.clearConfirm': 'Yakin? Klik lagi',
@@ -217,8 +239,9 @@ const TRANSLATIONS = {
     'storage.emptyExport': 'Belum ada catatan untuk disimpan.',
     'storage.invalidJson': 'File JSON tidak valid. Periksa kembali isinya.',
     'storage.invalidFile': 'File tidak berisi catatan yang bisa dibaca.',
-    'storage.fileTooLarge': 'File terlalu besar. Maksimal 2 MB.',
+    'storage.fileTooLarge': 'File terlalu besar. Maksimal 12 MB.',
     'storage.readError': 'Gagal membaca file. Silakan coba lagi.',
+    'storage.quota': 'Penyimpanan browser penuh. Hapus beberapa foto agar materi tetap tersimpan.',
 
     'empty.title': 'Materi belajarmu muncul di sini',
     'empty.desc': 'Tempel catatan atau isi formulir soal, lalu tekan <span class="font-semibold text-slate-700">Buat Flashcard &amp; Kuis</span>.',
@@ -251,10 +274,14 @@ const TRANSLATIONS = {
     'card.aria': 'Flashcard. Tekan Enter atau klik untuk membalik.',
     'card.keys': 'Gunakan <kbd class="kbd">←</kbd> <kbd class="kbd">→</kbd> untuk berpindah, <kbd class="kbd">Space</kbd> untuk membalik.',
 
+    'image.alt': 'Gambar soal',
+    'image.termLabel': 'gambar ini',
+
     'quiz.counter': 'Soal {i} / {n}',
     'quiz.score': '{n} benar',
     'quiz.promptCloze': 'Lengkapi bagian rumpang pada poin berikut.',
     'quiz.promptMatch': 'Manakah definisi yang paling tepat untuk “{term}”?',
+    'quiz.promptImage': 'Manakah definisi yang paling tepat untuk gambar berikut?',
     'quiz.explainCloze': 'Jawaban yang benar: “{term}”.',
     'quiz.correctTitle': 'Tepat sekali!',
     'quiz.wrongTitle': 'Belum tepat.',
@@ -346,9 +373,22 @@ const TRANSLATIONS = {
     'structured.explanationPlaceholder': 'Example: A model memorizes the training data, hurting performance on new data.',
     'structured.remove': 'Remove question {n}',
     'structured.count': '{complete} of {total} complete',
+    'structured.imageAdd': 'Photo',
+    'structured.imageChange': 'Change photo',
+    'structured.imageRemove': 'Remove photo',
+    'structured.imageAddAria': 'Add a photo for the {field} of question {n}',
+    'structured.imageChangeAria': 'Change the photo for the {field} of question {n}',
+    'structured.imageRemoveAria': 'Remove the photo from the {field} of question {n}',
+    'structured.imageFieldTerm': 'term',
+    'structured.imageFieldExplanation': 'explanation',
+    'structured.imageProcessing': 'Processing…',
+    'structured.imageErrorType': 'The file must be an image (JPG, PNG, or WebP).',
+    'structured.imageErrorSize': 'The image is too large. The maximum is 12 MB.',
+    'structured.imageErrorRead': 'The image could not be processed. Try another file.',
+    'structured.imageTermLabel': 'Image question {n}',
     'structured.errorMin': 'Add at least two complete rows: a term and an explanation.',
-    'structured.errorIncomplete': 'Question {n} is incomplete. Fill in both the term and explanation, or clear that row.',
-    'structured.errorDuplicateTerm': 'The term “{term}” is used more than once. Use unique terms.',
+    'structured.errorIncomplete': 'Question {n} is incomplete. Fill in both the term and explanation (text or photo), or clear that row.',
+    'structured.errorDuplicateQuestion': 'Questions {first} and {second} are identical: the term and the answer are the same. Change the photo or the answer so they differ.',
     'structured.errorEmpty': 'The form is still empty. Add at least two complete questions.',
     'structured.errorMax': 'A form can contain at most {n} questions.',
 
@@ -359,8 +399,9 @@ const TRANSLATIONS = {
     'tips.four': 'Your notes are saved automatically in this browser.',
     'structured.tips.one': 'Each complete row becomes a <strong>definition card</strong>, MCQ, and T/F statement.',
     'structured.tips.two': 'Add at least <strong>two complete rows</strong>: term and explanation.',
-    'structured.tips.three': 'Use unique terms; explanations may be the same across questions.',
-    'structured.tips.four': 'Your form data is saved automatically in this browser.',
+    'structured.tips.three': 'The same term is allowed when the photo or answer differs; only identical questions are rejected.',
+    'structured.tips.four': 'Each field can hold text, a photo, or both. Photos are compressed automatically.',
+    'structured.tips.five': 'Form data and photos are saved automatically in this browser.',
 
     'storage.clear': 'Clear all',
     'storage.clearConfirm': 'Sure? Click again',
@@ -372,8 +413,9 @@ const TRANSLATIONS = {
     'storage.emptyExport': 'There are no notes to export yet.',
     'storage.invalidJson': "That JSON file isn't valid. Please check its contents.",
     'storage.invalidFile': "The file doesn't contain readable notes.",
-    'storage.fileTooLarge': 'That file is too large. The maximum size is 2 MB.',
+    'storage.fileTooLarge': 'That file is too large. The maximum size is 12 MB.',
     'storage.readError': "Couldn't read that file. Please try again.",
+    'storage.quota': 'Browser storage is full. Remove some photos so your material keeps saving.',
 
     'empty.title': 'Your study material appears here',
     'empty.desc': 'Paste your notes or fill in the question form, then press <span class="font-semibold text-slate-700">Create Flashcards &amp; Quiz</span>.',
@@ -406,10 +448,14 @@ const TRANSLATIONS = {
     'card.aria': 'Flashcard. Press Enter or click to flip.',
     'card.keys': 'Use <kbd class="kbd">←</kbd> <kbd class="kbd">→</kbd> to move, <kbd class="kbd">Space</kbd> to flip.',
 
+    'image.alt': 'Question image',
+    'image.termLabel': 'this image',
+
     'quiz.counter': 'Question {i} / {n}',
     'quiz.score': '{n} correct',
     'quiz.promptCloze': 'Fill in the blank in the following point.',
     'quiz.promptMatch': 'Which definition best matches “{term}”?',
+    'quiz.promptImage': 'Which definition best matches this image?',
     'quiz.explainCloze': 'Correct answer: “{term}”.',
     'quiz.correctTitle': 'Correct!',
     'quiz.wrongTitle': 'Not quite.',
@@ -669,6 +715,82 @@ function capitalize(text) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+/* ---------- Gambar ---------- */
+
+const imageKeyCache = new Map();
+
+function hashString(value) {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+/** Kunci ringkas untuk data URL agar tidak membandingkan string base64 panjang. */
+function imageKey(dataUrl) {
+  if (!dataUrl) return '';
+  const cached = imageKeyCache.get(dataUrl);
+  if (cached) return cached;
+
+  const key = `${dataUrl.length}-${hashString(dataUrl)}`;
+  imageKeyCache.set(dataUrl, key);
+  if (imageKeyCache.size > 240) {
+    const oldest = imageKeyCache.keys().next().value;
+    imageKeyCache.delete(oldest);
+  }
+  return key;
+}
+
+/**
+ * Nilai sebuah field = teks + gambar. Keduanya ikut menjadi identitas supaya
+ * dua nilai berteks sama tetapi fotonya berbeda tetap dianggap berbeda
+ * (v9.1). Nilai tanpa teks dan tanpa foto dianggap kosong.
+ */
+function valueKey(text, image = '') {
+  const normalized = String(text ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const imagePart = image ? imageKey(image) : '';
+  if (!normalized && !imagePart) return '';
+  return `t:${normalized}|i:${imagePart}`;
+}
+
+/**
+ * Identitas satu soal lengkap: pasangan pertanyaan (teks + foto) dan
+ * jawaban (teks + foto). Dipakai untuk menolak hanya soal yang benar-benar
+ * kembar, bukan sekadar istilah berteks sama.
+ */
+function questionKey(term, termImage, explanation, explanationImage) {
+  return `${valueKey(term, termImage)}||${valueKey(explanation, explanationImage)}`;
+}
+
+function isImageDataUrl(value) {
+  return typeof value === 'string'
+    && value.length > 22
+    && value.length <= MAX_IMAGE_DATA_URL_LENGTH
+    && /^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=]+$/i.test(value);
+}
+
+function normalizeImageValue(value) {
+  return isImageDataUrl(value) ? value : '';
+}
+
+function imageMarkup(dataUrl, { alt = '', className = 'study-image' } = {}) {
+  if (!isImageDataUrl(dataUrl)) return '';
+  return `<img class="${className}" src="${escapeHtml(dataUrl)}" alt="${escapeHtml(alt)}" decoding="async" />`;
+}
+
+function fieldHasContent(text, image) {
+  return Boolean(String(text ?? '').trim() || normalizeImageValue(image));
+}
+
+function dataUrlBytes(dataUrl) {
+  const comma = dataUrl.indexOf(',');
+  if (comma < 0) return dataUrl.length;
+  const base64 = dataUrl.slice(comma + 1);
+  return Math.floor((base64.length * 3) / 4);
+}
+
 /** Ubah teks polos menjadi HTML aman, dengan penanda rumpang. */
 function formatText(text) {
   return escapeHtml(text)
@@ -808,12 +930,14 @@ function cleanStructuredValue(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim();
 }
 
-function createStructuredRow(term = '', explanation = '') {
+function createStructuredRow(term = '', explanation = '', termImage = '', explanationImage = '') {
   structuredRowSeed += 1;
   return {
     id: `srow-${structuredRowSeed}`,
     term: String(term ?? ''),
     explanation: String(explanation ?? ''),
+    termImage: normalizeImageValue(termImage),
+    explanationImage: normalizeImageValue(explanationImage),
   };
 }
 
@@ -835,6 +959,8 @@ function normalizeStructuredRows(rows) {
         : typeof row.definition === 'string'
           ? row.definition
           : '',
+      row.termImage,
+      row.explanationImage,
     ));
 }
 
@@ -857,13 +983,109 @@ function focusStructuredCell(rowId, field = 'term') {
   if (fieldEl) fieldEl.focus();
 }
 
+function structuredImageValue(row, field) {
+  return normalizeImageValue(field === 'term' ? row.termImage : row.explanationImage);
+}
+
+function structuredImageButton(row, index, field, disabled) {
+  const image = structuredImageValue(row, field);
+  const fieldName = t(field === 'term' ? 'structured.imageFieldTerm' : 'structured.imageFieldExplanation');
+  const key = image ? 'structured.imageChangeAria' : 'structured.imageAddAria';
+  const label = t(image ? 'structured.imageChange' : 'structured.imageAdd');
+
+  return `
+    <button
+      type="button"
+      class="image-btn"
+      data-pick-image="${field}"
+      data-row-id="${row.id}"
+      aria-label="${escapeHtml(t(key, { field: fieldName, n: index + 1 }))}"
+      title="${escapeHtml(t(key, { field: fieldName, n: index + 1 }))}"${disabled}
+    >
+      <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.12" aria-hidden="true">
+        <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.2-2h5.4l1.2 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-8Z" stroke-linejoin="round" />
+        <circle cx="12" cy="12.5" r="3.2" />
+      </svg>
+      <span>${escapeHtml(label)}</span>
+    </button>`;
+}
+
+function structuredImagePreview(row, index, field, disabled) {
+  const image = structuredImageValue(row, field);
+  if (!image) {
+    return `<div class="structured-image-preview hidden" data-image-preview="${field}"></div>`;
+  }
+
+  const fieldName = t(field === 'term' ? 'structured.imageFieldTerm' : 'structured.imageFieldExplanation');
+  const removeLabel = t('structured.imageRemoveAria', { field: fieldName, n: index + 1 });
+
+  return `
+    <div class="structured-image-preview" data-image-preview="${field}">
+      ${imageMarkup(image, { alt: t('image.alt'), className: 'structured-thumb' })}
+      <button
+        type="button"
+        class="image-remove"
+        data-remove-image="${field}"
+        data-row-id="${row.id}"
+        aria-label="${escapeHtml(removeLabel)}"
+        title="${escapeHtml(removeLabel)}"${disabled}
+      >
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>`;
+}
+
+function structuredFieldMarkup(row, index, field, disabled) {
+  const isTerm = field === 'term';
+  const inputId = `structured-${isTerm ? 'term' : 'explanation'}-${row.id}`;
+  const label = isTerm ? t('structured.term') : t('structured.explanation');
+  const placeholder = isTerm
+    ? t('structured.termPlaceholder')
+    : t('structured.explanationPlaceholder');
+  const value = isTerm ? row.term : row.explanation;
+  const fieldName = t(isTerm ? 'structured.imageFieldTerm' : 'structured.imageFieldExplanation');
+  const hasImage = Boolean(structuredImageValue(row, field));
+  const inputLabel = t(hasImage ? 'structured.imageChangeAria' : 'structured.imageAddAria', {
+    field: fieldName,
+    n: index + 1,
+  });
+  const rows = isTerm ? 2 : 3;
+
+  return `
+    <div class="structured-field" data-field-wrap="${field}">
+      <div class="structured-field-head">
+        <label class="structured-label" for="${inputId}">${escapeHtml(label)}</label>
+        ${structuredImageButton(row, index, field, disabled)}
+      </div>
+      <textarea
+        id="${inputId}"
+        class="structured-input"
+        data-field="${field}"
+        rows="${rows}"
+        spellcheck="false"
+        aria-label="${escapeHtml(label)}"
+        placeholder="${escapeHtml(placeholder)}"${disabled}
+      >${escapeHtml(value)}</textarea>
+      <input
+        type="file"
+        class="structured-image-input"
+        accept="image/*"
+        data-image-input="${field}"
+        data-row-id="${row.id}"
+        aria-label="${escapeHtml(inputLabel)}"
+        hidden${disabled}
+      />
+      ${structuredImagePreview(row, index, field, disabled)}
+    </div>`;
+}
+
 function renderStructuredRows({ focusRowId = null, focusField = 'term' } = {}) {
   const rows = state.structuredRows;
 
   els.structuredRows.innerHTML = rows
     .map((row, index) => {
-      const termId = `structured-term-${row.id}`;
-      const explanationId = `structured-explanation-${row.id}`;
       const rowLabel = t('structured.rowLabel', { n: index + 1 });
       const removeLabel = t('structured.remove', { n: index + 1 });
       const disabled = state.loading ? ' disabled' : '';
@@ -884,30 +1106,8 @@ function renderStructuredRows({ focusRowId = null, focusField = 'term' } = {}) {
               </svg>
             </button>
           </div>
-          <div class="structured-field">
-            <label class="structured-label" for="${termId}">${escapeHtml(t('structured.term'))}</label>
-            <textarea
-              id="${termId}"
-              class="structured-input"
-              data-field="term"
-              rows="2"
-              spellcheck="false"
-              aria-label="${escapeHtml(t('structured.term'))}"
-              placeholder="${escapeHtml(t('structured.termPlaceholder'))}"${disabled}
-            >${escapeHtml(row.term)}</textarea>
-          </div>
-          <div class="structured-field">
-            <label class="structured-label" for="${explanationId}">${escapeHtml(t('structured.explanation'))}</label>
-            <textarea
-              id="${explanationId}"
-              class="structured-input"
-              data-field="explanation"
-              rows="3"
-              spellcheck="false"
-              aria-label="${escapeHtml(t('structured.explanation'))}"
-              placeholder="${escapeHtml(t('structured.explanationPlaceholder'))}"${disabled}
-            >${escapeHtml(row.explanation)}</textarea>
-          </div>
+          ${structuredFieldMarkup(row, index, 'term', disabled)}
+          ${structuredFieldMarkup(row, index, 'explanation', disabled)}
         </article>`;
     })
     .join('');
@@ -919,6 +1119,39 @@ function renderStructuredRows({ focusRowId = null, focusField = 'term' } = {}) {
     autoGrowStructuredRows();
     if (focusRowId) focusStructuredCell(focusRowId, focusField);
   });
+}
+
+/** Perbarui hanya pratinjau foto pada satu baris, tanpa render ulang seluruh form. */
+function renderRowImagePreview(rowEl, field, row) {
+  if (!rowEl || !rowEl.isConnected) return;
+
+  const index = state.structuredRows.indexOf(row);
+  const preview = rowEl.querySelector(`[data-image-preview="${field}"]`);
+  const button = rowEl.querySelector(`[data-pick-image="${field}"]`);
+
+  if (preview) {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = structuredImagePreview(row, Math.max(index, 0), field, '');
+    const next = wrapper.firstElementChild;
+    if (next) preview.replaceWith(next);
+  }
+
+  if (button) {
+    const fieldName = t(field === 'term' ? 'structured.imageFieldTerm' : 'structured.imageFieldExplanation');
+    const hasImage = Boolean(structuredImageValue(row, field));
+    const label = t(hasImage ? 'structured.imageChange' : 'structured.imageAdd');
+    const aria = t(hasImage ? 'structured.imageChangeAria' : 'structured.imageAddAria', {
+      field: fieldName,
+      n: Math.max(index, 0) + 1,
+    });
+    button.setAttribute('aria-label', aria);
+    button.setAttribute('title', aria);
+    const text = button.querySelector('span');
+    if (text) text.textContent = label;
+
+    const input = rowEl.querySelector(`[data-image-input="${field}"]`);
+    if (input) input.setAttribute('aria-label', aria);
+  }
 }
 
 function clearStructuredErrors() {
@@ -945,15 +1178,23 @@ function setStructuredRowErrors(rowIds) {
 
 function countCompleteStructuredRows() {
   return state.structuredRows.filter(
-    (row) => cleanStructuredValue(row.term) && cleanStructuredValue(row.explanation),
+    (row) => fieldHasContent(row.term, row.termImage)
+      && fieldHasContent(row.explanation, row.explanationImage),
   ).length;
 }
 
 function hasInputData() {
   return els.notes.value.trim().length > 0
     || state.structuredRows.some(
-      (row) => cleanStructuredValue(row.term) || cleanStructuredValue(row.explanation),
+      (row) => fieldHasContent(row.term, row.termImage)
+        || fieldHasContent(row.explanation, row.explanationImage),
     );
+}
+
+function structuredSourceText(term, definition) {
+  if (term && definition) return `${term}: ${definition}`;
+  if (term) return term;
+  return definition;
 }
 
 function buildStructuredCards() {
@@ -961,38 +1202,60 @@ function buildStructuredCards() {
     .map((row) => ({
       term: cleanStructuredValue(row.term),
       definition: cleanStructuredValue(row.explanation),
+      termImage: normalizeImageValue(row.termImage),
+      definitionImage: normalizeImageValue(row.explanationImage),
     }))
-    .filter((row) => row.term && row.definition)
+    .filter((row) => fieldHasContent(row.term, row.termImage)
+      && fieldHasContent(row.definition, row.definitionImage))
     .map((row) => ({
       kind: 'definition',
       term: row.term,
       definition: row.definition,
-      source: `${row.term}: ${row.definition}`,
+      termImage: row.termImage,
+      definitionImage: row.definitionImage,
+      source: structuredSourceText(row.term, row.definition),
       sourceMode: 'structured',
     }));
 
-  // Penjelasan boleh sama antar soal; hanya istilah yang perlu unik.
-  return uniqueBy(cards, (card) => card.term);
+  // Penjelasan boleh sama antar soal; istilah juga boleh berteks sama asalkan
+  // foto atau jawabannya berbeda. Hanya soal yang benar-benar kembar dibuang.
+  return uniqueBy(
+    cards,
+    (card) => questionKey(card.term, card.termImage, card.definition, card.definitionImage),
+  );
 }
 
 /**
  * Validasi mode formulir:
  * - baris kosong diabaikan,
+ * - setiap sisi boleh berisi teks, foto, atau keduanya,
  * - baris yang hanya terisi separuh dianggap belum lengkap,
  * - minimal dua baris lengkap,
- * - istilah harus unik, sedangkan penjelasan boleh sama.
+ * - istilah boleh sama asalkan foto pertanyaan atau jawabannya berbeda,
+ * - hanya soal yang benar-benar kembar (pertanyaan dan jawaban sama) ditolak.
  */
 function validateStructuredRows() {
   clearStructuredErrors();
 
   const rows = state.structuredRows;
-  const cleaned = rows.map((row, index) => ({
-    row,
-    index,
-    term: cleanStructuredValue(row.term),
-    explanation: cleanStructuredValue(row.explanation),
-  }));
-  const meaningful = cleaned.filter((entry) => entry.term || entry.explanation);
+  const cleaned = rows.map((row, index) => {
+    const term = cleanStructuredValue(row.term);
+    const explanation = cleanStructuredValue(row.explanation);
+    const termImage = normalizeImageValue(row.termImage);
+    const explanationImage = normalizeImageValue(row.explanationImage);
+
+    return {
+      row,
+      index,
+      term,
+      explanation,
+      termImage,
+      explanationImage,
+      hasTerm: fieldHasContent(term, termImage),
+      hasExplanation: fieldHasContent(explanation, explanationImage),
+    };
+  });
+  const meaningful = cleaned.filter((entry) => entry.hasTerm || entry.hasExplanation);
 
   if (meaningful.length === 0) {
     return {
@@ -1002,7 +1265,7 @@ function validateStructuredRows() {
     };
   }
 
-  const incomplete = meaningful.find((entry) => !entry.term || !entry.explanation);
+  const incomplete = meaningful.find((entry) => !entry.hasTerm || !entry.hasExplanation);
   if (incomplete) {
     setStructuredRowErrors([incomplete.row.id]);
     return {
@@ -1010,7 +1273,7 @@ function validateStructuredRows() {
       hint: t('structured.errorIncomplete', { n: incomplete.index + 1 }),
       focus: {
         id: incomplete.row.id,
-        field: incomplete.term ? 'explanation' : 'term',
+        field: incomplete.hasTerm ? 'explanation' : 'term',
       },
     };
   }
@@ -1025,19 +1288,27 @@ function validateStructuredRows() {
     };
   }
 
-  const seenTerms = new Map();
+  const seenQuestions = new Map();
   for (const entry of complete) {
-    const key = entry.term.toLowerCase();
-    if (seenTerms.has(key)) {
-      const first = seenTerms.get(key);
+    const key = questionKey(
+      entry.term,
+      entry.termImage,
+      entry.explanation,
+      entry.explanationImage,
+    );
+    if (seenQuestions.has(key)) {
+      const first = seenQuestions.get(key);
       setStructuredRowErrors([first.row.id, entry.row.id]);
       return {
         ok: false,
-        hint: t('structured.errorDuplicateTerm', { term: entry.term }),
+        hint: t('structured.errorDuplicateQuestion', {
+          first: first.index + 1,
+          second: entry.index + 1,
+        }),
         focus: { id: entry.row.id, field: 'term' },
       };
     }
-    seenTerms.set(key, entry);
+    seenQuestions.set(key, entry);
   }
 
   return {
@@ -1046,7 +1317,9 @@ function validateStructuredRows() {
       kind: 'definition',
       term: entry.term,
       definition: entry.explanation,
-      source: `${entry.term}: ${entry.explanation}`,
+      termImage: entry.termImage,
+      definitionImage: entry.explanationImage,
+      source: structuredSourceText(entry.term, entry.explanation),
       sourceMode: 'structured',
     })),
   };
@@ -1083,6 +1356,165 @@ function removeStructuredRow(rowId) {
   saveNotes();
   flashSaveStatus();
   els.btnAddRow.focus({ preventScroll: true });
+}
+
+/* ---------- Unggah & kompresi foto ---------- */
+
+function loadImageSource(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      const error = new Error('decode');
+      error.code = 'decode';
+      reject(error);
+    };
+    image.src = url;
+  });
+}
+
+/**
+ * Kecilkan resolusi dan turunkan kualitas gambar sebelum disimpan sebagai
+ * Base64. Target akhir di bawah IMAGE_TARGET_BYTES agar localStorage awet.
+ */
+async function compressImageFile(file) {
+  if (!file || !String(file.type || '').startsWith('image/')) {
+    const error = new Error('type');
+    error.code = 'type';
+    throw error;
+  }
+
+  if (file.size > MAX_IMAGE_SOURCE_BYTES) {
+    const error = new Error('size');
+    error.code = 'size';
+    throw error;
+  }
+
+  const image = await loadImageSource(file);
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+
+  if (!sourceWidth || !sourceHeight) {
+    const error = new Error('decode');
+    error.code = 'decode';
+    throw error;
+  }
+
+  let scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(sourceWidth, sourceHeight));
+  let quality = IMAGE_JPEG_QUALITY;
+  let dataUrl = '';
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const width = Math.max(1, Math.round(sourceWidth * scale));
+    const height = Math.max(1, Math.round(sourceHeight * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      const error = new Error('decode');
+      error.code = 'decode';
+      throw error;
+    }
+
+    // Latar putih mencegah area transparan menjadi hitam saat dikonversi ke JPEG.
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+    dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+    if (dataUrlBytes(dataUrl) <= IMAGE_TARGET_BYTES) break;
+    if (quality > 0.5) quality = Math.max(0.5, quality - 0.08);
+    else scale *= 0.82;
+  }
+
+  if (!isImageDataUrl(dataUrl)) {
+    const error = new Error('decode');
+    error.code = 'decode';
+    throw error;
+  }
+
+  return dataUrl;
+}
+
+function setRowImageBusy(rowEl, field, busy) {
+  if (!rowEl) return;
+
+  rowEl.classList.toggle('is-image-busy', busy);
+  const wrap = rowEl.querySelector(`[data-field-wrap="${field}"]`);
+  if (wrap) wrap.classList.toggle('is-image-busy', busy);
+
+  const button = rowEl.querySelector(`[data-pick-image="${field}"]`);
+  if (button) button.disabled = busy;
+
+  if (busy && button) {
+    const text = button.querySelector('span');
+    if (text) text.textContent = t('structured.imageProcessing');
+  }
+}
+
+function findStructuredRowElement(rowId) {
+  return Array.from(els.structuredRows.children)
+    .find((element) => element.dataset.rowId === rowId) || null;
+}
+
+async function applyImageFileToRow(rowId, field, file) {
+  if (state.loading || !file || (field !== 'term' && field !== 'explanation')) return;
+
+  const row = state.structuredRows.find((item) => item.id === rowId);
+  const rowEl = findStructuredRowElement(rowId);
+  if (!row || !rowEl) return;
+
+  setRowImageBusy(rowEl, field, true);
+
+  try {
+    const dataUrl = await compressImageFile(file);
+    const target = state.structuredRows.find((item) => item.id === rowId);
+    if (!target) return;
+
+    target[field === 'term' ? 'termImage' : 'explanationImage'] = dataUrl;
+    clearStructuredErrors();
+    clearHint();
+    updateCounters();
+    saveNotes();
+    flashSaveStatus();
+  } catch (error) {
+    const key = error && error.code === 'size'
+      ? 'structured.imageErrorSize'
+      : error && error.code === 'type'
+        ? 'structured.imageErrorType'
+        : 'structured.imageErrorRead';
+    showHint(t(key));
+  } finally {
+    const current = state.structuredRows.find((item) => item.id === rowId);
+    const currentEl = findStructuredRowElement(rowId);
+    if (currentEl) {
+      setRowImageBusy(currentEl, field, false);
+      if (current) renderRowImagePreview(currentEl, field, current);
+    }
+  }
+}
+
+function removeStructuredRowImage(rowId, field) {
+  if (state.loading) return;
+
+  const row = state.structuredRows.find((item) => item.id === rowId);
+  if (!row || (field !== 'term' && field !== 'explanation')) return;
+
+  row[field === 'term' ? 'termImage' : 'explanationImage'] = '';
+  renderRowImagePreview(findStructuredRowElement(rowId), field, row);
+  clearStructuredErrors();
+  clearHint();
+  updateCounters();
+  saveNotes();
+  flashSaveStatus();
 }
 
 function togglePanel(panel, active) {
@@ -1137,23 +1569,34 @@ function focusActiveInput() {
  * Ambil maksimal empat opsi unik berurutan dari pool asli. Blok empat baris
  * dipakai agar pengecoh tetap dekat dengan konteks jawaban. Posisi jawaban
  * benar sendiri diacak terpisah oleh randomizeAnswerPositions().
- * Jawaban benar tidak pernah dipakai sebagai pengecoh, dan pengecoh kembar
- * dibuang sebelum opsi dirender.
+ * Jawaban benar tidak pernah dipakai sebagai pengecoh, pengecoh kembar
+ * dibuang, dan opsi yang juga sah untuk pertanyaan yang sama (misalnya
+ * jawaban baris lain dengan istilah dan foto identik) tidak dipakai.
  */
-function buildOptionWindow(pool, correctValue) {
-  const uniquePool = uniqueBy(pool, (value) => value);
-  const lowerCorrect = String(correctValue).toLowerCase();
-  let correctIndex = uniquePool.indexOf(correctValue);
+function buildOptionWindow(pool, correctOption, excludedKeys = null) {
+  const correctKey = valueKey(correctOption.text, correctOption.image);
+  const uniquePool = uniqueOptionPool(pool).filter((option) => {
+    if (!excludedKeys || excludedKeys.size === 0) return true;
+    const key = valueKey(option.text, option.image);
+    return key === correctKey || !excludedKeys.has(key);
+  });
+  const lowerCorrect = String(correctOption.text ?? '').trim().toLowerCase();
 
-  if (correctIndex < 0) {
-    correctIndex = uniquePool.findIndex((value) => value.toLowerCase() === lowerCorrect);
+  let correctIndex = uniquePool.findIndex(
+    (option) => valueKey(option.text, option.image) === correctKey,
+  );
+
+  if (correctIndex < 0 && lowerCorrect) {
+    correctIndex = uniquePool.findIndex(
+      (option) => String(option.text ?? '').trim().toLowerCase() === lowerCorrect,
+    );
   }
 
   if (correctIndex < 0) {
     const options = [
-      correctValue,
+      { text: correctOption.text, image: correctOption.image },
       ...uniquePool
-        .filter((value) => value.toLowerCase() !== lowerCorrect)
+        .filter((option) => valueKey(option.text, option.image) !== correctKey)
         .slice(0, 3),
     ];
     return { options, answerIndex: 0 };
@@ -1165,18 +1608,9 @@ function buildOptionWindow(pool, correctValue) {
     Math.max(0, uniquePool.length - windowSize),
   );
 
-  // Filter tambahan agar opsi yang tampil dijamin tidak kembar.
-  const seen = new Set();
-  const options = [];
-  uniquePool.slice(blockStart, blockStart + windowSize).forEach((value) => {
-    const key = value.toLowerCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    options.push(value);
-  });
-
+  const options = uniquePool.slice(blockStart, blockStart + windowSize);
   const answerIndex = options.findIndex(
-    (value) => value.toLowerCase() === lowerCorrect,
+    (option) => valueKey(option.text, option.image) === correctKey,
   );
 
   return {
@@ -1185,19 +1619,50 @@ function buildOptionWindow(pool, correctValue) {
   };
 }
 
+function optionFrom(text, image) {
+  return { text: String(text ?? ''), image: normalizeImageValue(image) };
+}
+
+function uniqueOptionPool(items) {
+  const seen = new Set();
+  const result = [];
+
+  items.forEach((item) => {
+    const option = optionFrom(item.text, item.image);
+    const key = valueKey(option.text, option.image);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    result.push(option);
+  });
+
+  return result;
+}
+
 function makeQuestion(card, cards) {
-  const termPool = uniqueBy(
-    cards.map((item) => item.term),
-    (term) => term,
+  const termPool = uniqueOptionPool(
+    cards.map((item) => ({ text: item.term, image: item.termImage })),
   );
 
-  const definitionPool = uniqueBy(
-    cards.filter((item) => item.kind === 'definition').map((item) => item.definition),
-    (definition) => definition,
+  const definitionPool = uniqueOptionPool(
+    cards
+      .filter((item) => item.kind === 'definition')
+      .map((item) => ({ text: item.definition, image: item.definitionImage })),
   );
 
-  const sourceLower = card.source.toLowerCase();
-  const termIndex = sourceLower.indexOf(card.term.toLowerCase());
+  // Pertanyaan dikenali dari istilah + fotonya. Jawaban milik baris lain
+  // dengan pertanyaan yang sama tetap sah, jadi tidak boleh dipakai sebagai
+  // pengecoh.
+  const termIdentity = valueKey(card.term, card.termImage);
+  const siblingDefinitions = new Set();
+  cards.forEach((item) => {
+    if (valueKey(item.term, item.termImage) === termIdentity) {
+      siblingDefinitions.add(valueKey(item.definition, item.definitionImage));
+    }
+  });
+
+  const termText = String(card.term ?? '').trim();
+  const sourceLower = String(card.source ?? '').toLowerCase();
+  const termIndex = termText ? sourceLower.indexOf(termText.toLowerCase()) : -1;
   const canCloze = termIndex >= 0 && termPool.length >= 2;
   const canMatch = card.kind === 'definition' && definitionPool.length >= 2;
 
@@ -1207,30 +1672,37 @@ function makeQuestion(card, cards) {
     && (!canMatch || (definitionPool.length < 4 && termPool.length >= 4));
 
   if (canMatch && !useCloze) {
-    const { options, answerIndex } = buildOptionWindow(definitionPool, card.definition);
+    const correct = optionFrom(card.definition, card.definitionImage);
+    const { options, answerIndex } = buildOptionWindow(definitionPool, correct, siblingDefinitions);
 
     return {
       type: 'match',
       term: card.term,
+      termImage: normalizeImageValue(card.termImage),
       definition: card.definition,
+      definitionImage: normalizeImageValue(card.definitionImage),
       context: null,
       options,
       answerIndex,
       note: card.definition,
+      noteImage: normalizeImageValue(card.definitionImage),
     };
   }
 
   if (canCloze) {
     const blanked = `${card.source.slice(0, termIndex)}[____]${card.source.slice(termIndex + card.term.length)}`;
-    const { options, answerIndex } = buildOptionWindow(termPool, card.term);
+    const correct = optionFrom(card.term, card.termImage);
+    const { options, answerIndex } = buildOptionWindow(termPool, correct);
 
     return {
       type: 'cloze',
       term: card.term,
+      termImage: normalizeImageValue(card.termImage),
       context: `“${blanked}”`,
       options,
       answerIndex,
       note: card.source,
+      noteImage: '',
     };
   }
 
@@ -1238,15 +1710,34 @@ function makeQuestion(card, cards) {
 }
 
 function questionPrompt(question) {
-  return question.type === 'cloze'
-    ? t('quiz.promptCloze')
-    : t('quiz.promptMatch', { term: question.term });
+  if (question.type === 'cloze') return t('quiz.promptCloze');
+  if (String(question.term ?? '').trim()) {
+    return t('quiz.promptMatch', { term: question.term });
+  }
+  return t('quiz.promptImage');
 }
 
-function questionExplanation(question) {
-  return question.type === 'cloze'
-    ? t('quiz.explainCloze', { term: question.term })
-    : `“${question.term}”: ${question.definition}`;
+function questionExplanationHtml(question) {
+  if (question.type === 'cloze') {
+    return `
+      <p>${escapeHtml(t('quiz.explainCloze', { term: question.term }))}</p>
+      ${imageMarkup(question.termImage, {
+        alt: t('image.alt'),
+        className: 'study-image feedback-image',
+      })}`;
+  }
+
+  const termLabel = String(question.term ?? '').trim()
+    ? `“${question.term}”`
+    : t('image.termLabel');
+  const definition = String(question.definition ?? '').trim();
+
+  return `
+    <p>${escapeHtml(termLabel)}${definition ? `: ${escapeHtml(definition)}` : ''}</p>
+    ${imageMarkup(question.definitionImage, {
+      alt: t('image.alt'),
+      className: 'study-image feedback-image',
+    })}`;
 }
 
 function buildQuiz(cards) {
@@ -1367,18 +1858,22 @@ function breakSequentialRun(targets, questions) {
 /**
  * Cocokkan setiap pernyataan salah dengan penjelasan milik istilah lain.
  *
+ * `blockedKeys` berisi penjelasan yang sah untuk pertanyaan tersebut
+ * (termasuk penjelasan baris lain dengan istilah dan foto yang sama), supaya
+ * pernyataan yang sebenarnya benar tidak pernah dilabeli salah.
+ *
  * Memakai algoritma Kuhn (pencocokan bipartit) supaya satu penjelasan hanya
  * dipakai sebagai pengecoh satu kali. Soal yang tidak mendapat pasangan
  * dibiarkan -1 dan nanti berubah menjadi pernyataan benar.
  */
-function matchTfDistractors(ownKeys, definitions) {
+function matchTfDistractors(blockedKeys, definitions) {
   const heldBy = definitions.map(() => -1);
-  const chosen = ownKeys.map(() => -1);
+  const chosen = blockedKeys.map(() => -1);
 
   const tryAssign = (questionIndex, visited) => {
     for (let valueIndex = 0; valueIndex < definitions.length; valueIndex += 1) {
       if (visited[valueIndex]) continue;
-      if (definitions[valueIndex].key === ownKeys[questionIndex]) continue;
+      if (blockedKeys[questionIndex].has(definitions[valueIndex].key)) continue;
 
       visited[valueIndex] = true;
       if (heldBy[valueIndex] === -1 || tryAssign(heldBy[valueIndex], visited)) {
@@ -1391,7 +1886,7 @@ function matchTfDistractors(ownKeys, definitions) {
     return false;
   };
 
-  ownKeys.forEach((_, questionIndex) => {
+  blockedKeys.forEach((_, questionIndex) => {
     tryAssign(questionIndex, definitions.map(() => false));
   });
 
@@ -1413,17 +1908,30 @@ function buildTrueFalseQuestions(cards, { randomize = false } = {}) {
   const pairs = cards.filter((card) => card.kind === 'definition');
   if (pairs.length < 2) return [];
 
-  const valueKey = (definition) => String(definition ?? '').trim().toLowerCase();
-
-  // Satu entri per penjelasan unik. Bila beberapa istilah berbagi penjelasan
-  // yang sama, istilah pertama dipakai sebagai pemilik untuk feedback.
+  // Satu entri per penjelasan unik (teks + foto). Bila beberapa istilah berbagi
+  // penjelasan yang sama, istilah pertama dipakai sebagai pemilik untuk feedback.
   const definitions = [];
   const seenDefinitions = new Set();
   pairs.forEach((pair) => {
-    const key = valueKey(pair.definition);
-    if (seenDefinitions.has(key)) return;
+    const key = valueKey(pair.definition, pair.definitionImage);
+    if (!key || seenDefinitions.has(key)) return;
     seenDefinitions.add(key);
-    definitions.push({ key, definition: pair.definition, term: pair.term });
+    definitions.push({
+      key,
+      definition: pair.definition,
+      image: normalizeImageValue(pair.definitionImage),
+      term: pair.term,
+      termImage: normalizeImageValue(pair.termImage),
+    });
+  });
+
+  // Penjelasan milik istilah yang sama (termasuk baris lain dengan istilah
+  // dan foto identik) tetap sah, jadi tidak boleh menjadi pengecoh salah.
+  const blockedByTerm = new Map();
+  pairs.forEach((pair) => {
+    const termKey = valueKey(pair.term, pair.termImage);
+    if (!blockedByTerm.has(termKey)) blockedByTerm.set(termKey, new Set());
+    blockedByTerm.get(termKey).add(valueKey(pair.definition, pair.definitionImage));
   });
 
   // Pola benar/salah seimbang: 2 soal -> 1 benar, 3 soal -> 2 benar, dst.
@@ -1436,7 +1944,7 @@ function buildTrueFalseQuestions(cards, { randomize = false } = {}) {
   // Benar/Salah walau ada penjelasan yang kembar.
   const pool = randomize ? shuffleArray(definitions) : definitions;
   const chosen = matchTfDistractors(
-    pairs.map((pair) => valueKey(pair.definition)),
+    pairs.map((pair) => blockedByTerm.get(valueKey(pair.term, pair.termImage))),
     pool,
   );
   const matched = pairs.map((_, index) => index).filter((index) => chosen[index] >= 0);
@@ -1469,9 +1977,12 @@ function buildTrueFalseQuestions(cards, { randomize = false } = {}) {
     if (!mismatch) {
       return {
         term: pair.term,
+        termImage: normalizeImageValue(pair.termImage),
         definition: pair.definition,
+        definitionImage: normalizeImageValue(pair.definitionImage),
         isTrue: true,
         correctTerm: pair.term,
+        correctTermImage: normalizeImageValue(pair.termImage),
         selected: undefined,
         correct: undefined,
       };
@@ -1479,9 +1990,12 @@ function buildTrueFalseQuestions(cards, { randomize = false } = {}) {
 
     return {
       term: pair.term,
+      termImage: normalizeImageValue(pair.termImage),
       definition: mismatch.definition,
+      definitionImage: mismatch.image,
       isTrue: false,
       correctTerm: mismatch.term,
+      correctTermImage: mismatch.termImage,
       selected: undefined,
       correct: undefined,
     };
@@ -1514,19 +2028,32 @@ function renderCard(options = {}) {
 
   let frontText;
   if (card.kind === 'definition') {
-    frontText = isStructured ? card.term : t('card.question', { term: card.term });
+    frontText = isStructured
+      ? card.term
+      : t('card.question', { term: card.term });
   } else {
     frontText = `“${card.cloze}”`;
   }
 
+  const frontImage = card.kind === 'definition' && isStructured
+    ? normalizeImageValue(card.termImage)
+    : '';
+
   els.cardFront.className = card.kind === 'definition'
     ? 'card-content card-content--question'
     : 'card-content card-content--cloze';
-  els.cardFront.innerHTML = `<div class="card-text">${formatText(frontText)}</div>`;
+  els.cardFront.innerHTML = `
+    ${frontText ? `<div class="card-text">${formatText(frontText)}</div>` : ''}
+    ${imageMarkup(frontImage, { alt: t('image.alt'), className: 'study-image card-image' })}`;
 
   els.cardBack.className = 'card-content card-content--answer';
   if (card.kind === 'definition') {
-    els.cardBack.innerHTML = `<div class="card-text">${formatText(card.definition)}</div>`;
+    els.cardBack.innerHTML = `
+      ${card.definition ? `<div class="card-text">${formatText(card.definition)}</div>` : ''}
+      ${imageMarkup(card.definitionImage, {
+        alt: t('image.alt'),
+        className: 'study-image card-image',
+      })}`;
   } else {
     els.cardBack.innerHTML = `
       <span class="text-xl font-extrabold">${escapeHtml(card.term)}</span>
@@ -1601,7 +2128,12 @@ function renderQuizQuestion() {
   renderQuizStreak();
   els.quizProgress.style.width = `${((state.quizIndex + (answered ? 1 : 0)) / state.quiz.length) * 100}%`;
 
-  els.quizPrompt.textContent = questionPrompt(question);
+  els.quizPrompt.innerHTML = `
+    <span>${escapeHtml(questionPrompt(question))}</span>
+    ${imageMarkup(question.termImage, {
+      alt: t('image.alt'),
+      className: 'study-image quiz-image',
+    })}`;
 
   if (question.context) {
     els.quizContext.innerHTML = formatText(question.context);
@@ -1616,7 +2148,13 @@ function renderQuizQuestion() {
       (option, index) => `
         <button type="button" class="quiz-option" data-index="${index}">
           <span class="option-key">${'ABCD'[index] || index + 1}</span>
-          <span class="flex-1">${escapeHtml(option)}</span>
+          <span class="option-body flex-1">
+            ${option.text ? `<span class="option-text">${escapeHtml(option.text)}</span>` : ''}
+            ${imageMarkup(option.image, {
+              alt: t('image.alt'),
+              className: 'study-image option-image',
+            })}
+          </span>
         </button>`,
     )
     .join('');
@@ -1675,7 +2213,7 @@ function paintAnswer(question) {
   els.quizFeedback.innerHTML = `
     <p class="font-extrabold">${feedbackTitle}</p>
     ${question.timedOut ? `<p class="mt-1 font-semibold">${t('timer.timeUpNote')}</p>` : ''}
-    <p class="mt-1">${escapeHtml(questionExplanation(question))}</p>
+    <div class="quiz-feedback-body mt-1">${questionExplanationHtml(question)}</div>
   `;
 
   els.quizNext.textContent = state.quizIndex === state.quiz.length - 1
@@ -1740,8 +2278,18 @@ function showQuizResult({ celebrate = true } = {}) {
           .map(
             (question) => `
           <li class="rounded-xl bg-rose-50/80 px-3.5 py-2.5 text-xs leading-relaxed text-rose-700 ring-1 ring-rose-100">
-            <span class="font-extrabold">${escapeHtml(question.term)}</span>
-            <span class="mt-1 block text-rose-600/90">${escapeHtml(question.note)}</span>
+            <span class="font-extrabold">${escapeHtml(
+              String(question.term ?? '').trim() || t('image.termLabel'),
+            )}</span>
+            ${imageMarkup(question.termImage, {
+              alt: t('image.alt'),
+              className: 'study-image review-image',
+            })}
+            <span class="mt-1 block text-rose-600/90">${escapeHtml(question.note || '')}</span>
+            ${imageMarkup(question.noteImage, {
+              alt: t('image.alt'),
+              className: 'study-image review-image',
+            })}
           </li>`,
           )
           .join('')}
@@ -1805,8 +2353,18 @@ function renderTfQuestion() {
   renderTfStreak();
   els.tfProgress.style.width = `${((state.tfIndex + (answered ? 1 : 0)) / state.tf.length) * 100}%`;
 
-  els.tfTerm.textContent = question.term;
-  els.tfDefinition.textContent = question.definition;
+  els.tfTerm.innerHTML = `
+    ${question.term ? escapeHtml(question.term) : ''}
+    ${imageMarkup(question.termImage, {
+      alt: t('image.alt'),
+      className: 'study-image tf-image',
+    })}`;
+  els.tfDefinition.innerHTML = `
+    ${question.definition ? escapeHtml(question.definition) : ''}
+    ${imageMarkup(question.definitionImage, {
+      alt: t('image.alt'),
+      className: 'study-image tf-image',
+    })}`;
 
   [els.tfTrue, els.tfFalse].forEach((button) => {
     button.disabled = false;
@@ -1874,14 +2432,21 @@ function paintTfAnswer(question) {
       : t('tf.wrongTitle');
 
   els.tfFeedback.className = `quiz-feedback mt-4 animate-in ${question.correct ? 'is-correct' : 'is-wrong'}`;
+  const termLabel = String(question.term ?? '').trim() || t('image.termLabel');
+  const ownerLabel = String(question.correctTerm ?? '').trim() || t('image.termLabel');
+
   els.tfFeedback.innerHTML = `
     <p class="font-extrabold">${feedbackTitle}</p>
     ${question.timedOut ? `<p class="mt-1 font-semibold">${t('timer.timeUpNote')}</p>` : ''}
     <p class="mt-1">${escapeHtml(
       question.isTrue
-        ? t('tf.explainTrue', { term: question.term })
-        : t('tf.explainFalse', { term: question.term, correctTerm: question.correctTerm }),
+        ? t('tf.explainTrue', { term: termLabel })
+        : t('tf.explainFalse', { term: termLabel, correctTerm: ownerLabel }),
     )}</p>
+    ${question.isTrue ? '' : imageMarkup(question.correctTermImage, {
+      alt: t('image.alt'),
+      className: 'study-image feedback-image',
+    })}
   `;
 
   els.tfNext.textContent = state.tfIndex === state.tf.length - 1
@@ -2649,7 +3214,9 @@ function setLoading(loading) {
     button.disabled = loading;
   });
 
-  els.structuredRows.querySelectorAll('.structured-input, .row-remove').forEach((field) => {
+  els.structuredRows.querySelectorAll(
+    '.structured-input, .row-remove, .image-btn, .image-remove, .structured-image-input',
+  ).forEach((field) => {
     field.disabled = loading;
   });
 
@@ -2666,12 +3233,26 @@ let saveTimer = null;
 let saveStatusTimer = null;
 let clearArmed = false;
 let clearTimer = null;
+let lastSaveSucceeded = true;
 
 function structuredRowsForStorage() {
   return state.structuredRows.map((row) => ({
     term: row.term,
     explanation: row.explanation,
+    termImage: normalizeImageValue(row.termImage),
+    explanationImage: normalizeImageValue(row.explanationImage),
   }));
+}
+
+let saveQuotaWarned = false;
+
+function isQuotaError(error) {
+  return Boolean(error) && (
+    error.name === 'QuotaExceededError'
+    || error.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+    || error.code === 22
+    || error.code === 1014
+  );
 }
 
 function saveNotes() {
@@ -2686,8 +3267,15 @@ function saveNotes() {
         updatedAt: new Date().toISOString(),
       }),
     );
+    saveQuotaWarned = false;
+    lastSaveSucceeded = true;
   } catch (error) {
     // localStorage bisa diblokir; aplikasi tetap berjalan tanpa auto-save.
+    lastSaveSucceeded = false;
+    if (!saveQuotaWarned && isQuotaError(error)) {
+      saveQuotaWarned = true;
+      showHint(t('storage.quota'));
+    }
   }
 }
 
@@ -2701,7 +3289,7 @@ function scheduleSave() {
 }
 
 function flashSaveStatus() {
-  if (!els.saveStatus) return;
+  if (!els.saveStatus || !lastSaveSucceeded) return;
 
   els.saveStatus.classList.add('is-visible');
   window.clearTimeout(saveStatusTimer);
@@ -2781,7 +3369,8 @@ function restoreSavedInput() {
   els.notes.value = saved.notes;
   const hasStructuredContent = Array.isArray(saved.structured)
     && saved.structured.some(
-      (row) => cleanStructuredValue(row.term) || cleanStructuredValue(row.explanation),
+      (row) => fieldHasContent(row.term, row.termImage)
+        || fieldHasContent(row.explanation, row.explanationImage),
     );
   const hasSavedContent = saved.notes.trim().length > 0 || hasStructuredContent;
   state.structuredRows = saved.structured === null || !hasSavedContent
@@ -2835,25 +3424,33 @@ function buildExportData() {
       definition: card.definition,
       source: card.source,
       sourceMode: card.sourceMode || 'paste',
+      termImage: normalizeImageValue(card.termImage),
+      definitionImage: normalizeImageValue(card.definitionImage),
       ...(card.cloze ? { cloze: card.cloze } : {}),
     })),
     quiz: state.quiz.map((question) => ({
       type: question.type,
       term: question.term,
+      termImage: normalizeImageValue(question.termImage),
       definition: question.definition ?? null,
+      definitionImage: normalizeImageValue(question.definitionImage),
       context: question.context ?? null,
       options: question.options,
       answerIndex: question.answerIndex,
       note: question.note,
+      noteImage: normalizeImageValue(question.noteImage),
       selected: question.selected ?? null,
       correct: question.correct ?? null,
       timedOut: Boolean(question.timedOut),
     })),
     trueFalse: state.tf.map((question) => ({
       term: question.term,
+      termImage: normalizeImageValue(question.termImage),
       definition: question.definition,
+      definitionImage: normalizeImageValue(question.definitionImage),
       isTrue: question.isTrue,
       correctTerm: question.correctTerm,
+      correctTermImage: normalizeImageValue(question.correctTermImage),
       selected: question.selected ?? null,
       correct: question.correct ?? null,
       timedOut: Boolean(question.timedOut),
@@ -2922,14 +3519,15 @@ function importFromText(text, fileName = '') {
       importedStructured = normalizeStructuredRows(data.structured);
     }
 
-    // File v7 dan file teks selalu kembali ke mode tempel; file v8 membawa mode aktifnya.
+    // File v7 dan file teks selalu kembali ke mode tempel; file v8/v9 membawa mode aktifnya.
     inputMode = data.inputMode === 'structured' ? 'structured' : 'paste';
   }
 
   const importedRows = importedStructured === null ? [] : importedStructured;
   const hasImportedData = notes.trim().length > 0
     || importedRows.some(
-      (row) => cleanStructuredValue(row.term) || cleanStructuredValue(row.explanation),
+      (row) => fieldHasContent(row.term, row.termImage)
+        || fieldHasContent(row.explanation, row.explanationImage),
     );
 
   if (!hasImportedData) {
@@ -3202,11 +3800,95 @@ els.structuredRows.addEventListener('input', (event) => {
 });
 
 els.structuredRows.addEventListener('click', (event) => {
-  const button = event.target instanceof Element
-    ? event.target.closest('[data-remove-row]')
+  if (!(event.target instanceof Element)) return;
+
+  const removeRow = event.target.closest('[data-remove-row]');
+  if (removeRow) {
+    removeStructuredRow(removeRow.dataset.removeRow);
+    return;
+  }
+
+  const pickImage = event.target.closest('[data-pick-image]');
+  if (pickImage) {
+    const rowEl = pickImage.closest('.structured-row');
+    const field = pickImage.dataset.pickImage;
+    const input = rowEl
+      ? rowEl.querySelector(`[data-image-input="${field}"]`)
+      : null;
+    if (input) input.click();
+    return;
+  }
+
+  const removeImage = event.target.closest('[data-remove-image]');
+  if (removeImage) {
+    removeStructuredRowImage(removeImage.dataset.rowId, removeImage.dataset.removeImage);
+  }
+});
+
+els.structuredRows.addEventListener('change', (event) => {
+  const input = event.target instanceof Element
+    ? event.target.closest('[data-image-input]')
     : null;
-  if (!button) return;
-  removeStructuredRow(button.dataset.removeRow);
+  if (!input) return;
+
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+
+  const rowEl = input.closest('.structured-row');
+  if (!rowEl) return;
+
+  void applyImageFileToRow(rowEl.dataset.rowId, input.dataset.imageInput, file);
+});
+
+els.structuredRows.addEventListener('dragover', (event) => {
+  const field = event.target instanceof Element
+    ? event.target.closest('.structured-field')
+    : null;
+  if (!field) return;
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  field.classList.add('is-dragover');
+});
+
+els.structuredRows.addEventListener('dragleave', (event) => {
+  const field = event.target instanceof Element
+    ? event.target.closest('.structured-field')
+    : null;
+  if (!field) return;
+  if (event.relatedTarget instanceof Node && field.contains(event.relatedTarget)) return;
+  field.classList.remove('is-dragover');
+});
+
+els.structuredRows.addEventListener('drop', (event) => {
+  const field = event.target instanceof Element
+    ? event.target.closest('.structured-field')
+    : null;
+  if (!field) return;
+  event.preventDefault();
+  field.classList.remove('is-dragover');
+
+  const rowEl = field.closest('.structured-row');
+  const file = event.dataTransfer && event.dataTransfer.files
+    ? event.dataTransfer.files[0]
+    : null;
+  if (!rowEl || !file) return;
+
+  void applyImageFileToRow(rowEl.dataset.rowId, field.dataset.fieldWrap, file);
+});
+
+// Cegah browser membuka file bila foto terlepas di luar kolom formulir.
+function isFileDrag(event) {
+  const types = event.dataTransfer && event.dataTransfer.types;
+  return Boolean(types) && Array.prototype.includes.call(types, 'Files');
+}
+
+document.addEventListener('dragover', (event) => {
+  if (isFileDrag(event)) event.preventDefault();
+});
+
+document.addEventListener('drop', (event) => {
+  if (isFileDrag(event)) event.preventDefault();
 });
 
 els.btnGenerate.addEventListener('click', generate);

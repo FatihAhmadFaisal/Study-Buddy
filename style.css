@@ -755,6 +755,111 @@ html {
   color: rgb(148 163 184);
 }
 
+/* ---------- Foto pada formulir soal ---------- */
+.structured-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.structured-field-head .structured-label {
+  margin-bottom: 0;
+}
+
+.image-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid rgb(199 210 254);
+  background: rgb(238 242 255 / 0.9);
+  padding: 0.22rem 0.55rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: rgb(67 56 202);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.image-btn:hover:not(:disabled) {
+  border-color: rgb(165 180 252);
+  background: rgb(224 231 255);
+}
+
+.image-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(224 231 255);
+}
+
+.image-btn:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+.structured-image-input {
+  display: none;
+}
+
+.structured-image-preview {
+  position: relative;
+  margin-top: 0.45rem;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(248 250 252);
+}
+
+.structured-image-preview.hidden {
+  display: none;
+}
+
+.structured-thumb {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 9rem;
+  margin: 0 auto;
+  object-fit: contain;
+  background: rgb(248 250 252);
+}
+
+.image-remove {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  display: grid;
+  height: 1.55rem;
+  width: 1.55rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.94);
+  color: rgb(225 29 72);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.18);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.image-remove:hover:not(:disabled) {
+  background: #ffe4e6;
+}
+
+.image-remove:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(254 205 211);
+}
+
+.structured-field.is-dragover {
+  border-radius: 0.8rem;
+  outline: 2px dashed rgb(129 140 248);
+  outline-offset: 2px;
+}
+
+.structured-field.is-image-busy .structured-image-preview {
+  opacity: 0.55;
+}
+
 .structured-empty {
   margin-top: 0.875rem;
   border-radius: 1rem;
@@ -969,6 +1074,53 @@ html {
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.7;
+}
+
+/* ---------- Gambar materi ---------- */
+.study-image {
+  display: block;
+  max-width: 100%;
+  max-height: 10rem;
+  margin: 0.45rem auto 0;
+  border-radius: 0.7rem;
+  object-fit: contain;
+  background: rgb(248 250 252);
+}
+
+.card-image {
+  max-height: 11rem;
+}
+
+.quiz-image {
+  max-height: 8rem;
+  margin-top: 0.6rem;
+}
+
+.option-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.option-image {
+  max-height: 8rem;
+  margin: 0;
+}
+
+.feedback-image {
+  max-height: 8rem;
+  margin: 0.5rem 0 0;
+}
+
+.review-image {
+  max-height: 5rem;
+  margin: 0.4rem 0 0;
+}
+
+.tf-image {
+  max-height: 9rem;
+  margin-top: 0.5rem;
 }
 
 .card-content::-webkit-scrollbar {
@@ -1377,6 +1529,18 @@ html {
 
   .card-content--question {
     font-size: 1.15rem;
+  }
+
+  .card-image {
+    max-height: 8rem;
+  }
+
+  .tf-image {
+    max-height: 8rem;
+  }
+
+  .structured-thumb {
+    max-height: 7rem;
   }
 
   .structured-rows {
